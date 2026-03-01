@@ -214,6 +214,25 @@ ENTITIES = {
         "accuracy": 0,
         "icon": "mdi:sine-wave",
     },
+    "compressor_frequency": {
+        "type": "sensor",
+        "code": 0x8238,
+        "unit": "Hz",
+        "device_class": "frequency",
+        "state_class": "measurement",
+        "accuracy": 1,
+        "icon": "mdi:sine-wave",
+        "divisor": 10,
+        "signed": True,
+    },
+    "outdoor_fan_speed": {
+        "type": "sensor",
+        "code": 0x823D,
+        "unit": "RPM",
+        "state_class": "measurement",
+        "accuracy": 0,
+        "icon": "mdi:fan",
+    },
 
     # =========================================================================
     # NUMBERS (read-write numeric)

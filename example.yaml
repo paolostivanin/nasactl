@@ -277,19 +277,7 @@ nasactl:
         name: "Outdoor Voltage"
       outdoor_temperature:
         name: "Outdoor Temperature"
-
-      # Custom sensors for arbitrary message codes
-      custom_sensor:
-        - name: "Compressor Frequency"
-          message: 0x8238
-          device_class: frequency
-          state_class: measurement
-          unit_of_measurement: Hz
-          accuracy_decimals: 1
-          divisor: 10
-          signed: true
-        - name: "Fan Speed"
-          message: 0x823D
-          state_class: measurement
-          unit_of_measurement: RPM
-          accuracy_decimals: 0
+      compressor_frequency:
+        name: "Compressor Frequency"
+      outdoor_fan_speed:
+        name: "Outdoor Fan Speed"
