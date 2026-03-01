@@ -1,0 +1,295 @@
+################################################
+# nasactl — Samsung NASA HVAC Bridge Example  #
+#                                              #
+# Adjust addresses, names, and entities to     #
+# match your system. Remove what you don't     #
+# need; add what you do from const.py.         #
+################################################
+
+substitutions:
+  devicename: "samsung-nasa-bridge"
+  friendly_name: "Samsung NASA Bridge"
+
+esphome:
+  name: "${devicename}"
+  friendly_name: "${friendly_name}"
+
+esp32:
+  board: m5stack-atom
+  framework:
+    type: esp-idf
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "${devicename}-ap"
+    password: !secret ap_password
+    ap_timeout: 60s
+
+captive_portal:
+
+api:
+  encryption:
+    key: !secret api_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+logger:
+  logs:
+    component: ERROR
+
+web_server:
+  port: 8080
+
+# Pull the nasactl component from GitHub
+external_components:
+  - source: github://paolostivanin/esphome-nasa-bridge@main
+    components: [nasactl]
+    refresh: 0s
+
+# UART for RS-485 connection to Samsung NASA bus
+uart:
+  tx_pin: GPIO19
+  rx_pin: GPIO22
+  baud_rate: 9600
+  parity: EVEN
+
+# Main component configuration
+nasactl:
+  # Optional RS-485 flow control pin
+  # flow_control_pin: GPIO23
+
+  # Communication tuning (defaults shown)
+  silence_interval: 100    # ms silence after RX before TX
+  retry_interval: 500      # ms between retries
+  min_retries: 1
+  send_timeout: 4000       # ms total timeout per packet
+
+  # FSV auto-read: polls Field Setting Values on startup
+  fsv_read:
+    startup_delay: 5s      # wait after boot before first poll
+    batch_size: 10          # max codes per NASA packet
+    batch_delay: 200ms      # delay between batches
+    interval: 24h           # periodic re-poll (0s = startup only)
+
+  # Debug logging
+  debug_log_messages: false
+  debug_log_undefined: false
+
+  devices:
+    # ==============================================================
+    # Hydro Unit (heat pump + DHW)
+    # No climate entity — individual controls only
+    # ==============================================================
+    - address: "20.00.00"
+      type: hydro
+
+      # --- DHW tank controls ---
+      water_heater_power:
+        name: "DHW Enabled"
+      water_heater_mode:
+        name: "DHW Mode"
+      water_temperature:
+        name: "DHW Temperature"
+      water_target_temperature:
+        name: "DHW Target Temperature"
+
+      # --- Water / refrigerant temperatures ---
+      phe_out_water_out:
+        name: "PHE OUT (Water Out)"
+      phe_in_water_return:
+        name: "PHE IN (Water Return)"
+      eva_in_temp:
+        name: "EVA In Temp"
+      eva_out_temp:
+        name: "EVA Out Temp"
+      water_flow:
+        name: "Water Flow"
+
+      # --- 3-way valve ---
+      dhw_valve_direction:
+        name: "3-Way Valve Direction"
+
+      # --- Status sensors ---
+      water_law_target_flow_temp:
+        name: "Water Law Target Flow Temp"
+      indoor_power_consumption:
+        name: "Indoor Power Consumption"
+      generated_power_last_minute:
+        name: "Generated Power Last Minute"
+      defrost_status:
+        name: "Defrost Status"
+      water_pump_status:
+        name: "Water Pump Status"
+      booster_heater_status:
+        name: "Booster Heater Status"
+
+      # --- Controls ---
+      silence_mode:
+        name: "Silence Mode"
+      water_law_target_temp_shift:
+        name: "Water Law Target Temp Shift"
+
+      # --- FSV: Heating water outlet limits ---
+      heating_water_outlet_temp_upper:
+        name: "Heating Water Outlet Upper Limit"
+      heating_water_outlet_temp_lower:
+        name: "Heating Water Outlet Lower Limit"
+
+      # --- FSV: Water law curve ---
+      heating_lower_outdoor_temp:
+        name: "Heating Lower Outdoor Temp"
+      heating_upper_outdoor_temp:
+        name: "Heating Upper Outdoor Temp"
+      heating_water_temp_cold_outdoor:
+        name: "Heating Water Temp at Cold Outdoor"
+      heating_water_temp_warm_outdoor:
+        name: "Heating Water Temp at Warm Outdoor"
+
+      # --- FSV: DHW tank limits ---
+      dhw_tank_temp_upper:
+        name: "DHW Tank Temp Upper Limit"
+      dhw_tank_temp_lower:
+        name: "DHW Tank Temp Lower Limit"
+
+      # --- FSV: DHW operation ---
+      dhw_operation_mode:
+        name: "DHW Operation Mode"
+      dhw_booster_heater:
+        name: "DHW Booster Heater"
+      dhw_booster_heater_delay:
+        name: "DHW Booster Heater Delay"
+      dhw_booster_heater_overshoot:
+        name: "DHW Booster Heater Overshoot"
+
+      # --- FSV: DHW forced operation ---
+      dhw_forced_operation_timer:
+        name: "DHW Forced Operation Timer"
+      dhw_forced_operation_time:
+        name: "DHW Forced Operation Time"
+
+      # --- FSV: DHW disinfection ---
+      dhw_disinfection_enable:
+        name: "DHW Disinfection"
+      dhw_disinfection_day:
+        name: "DHW Disinfection Day"
+      dhw_disinfection_start_time:
+        name: "DHW Disinfection Start Time"
+      dhw_disinfection_target_temp:
+        name: "DHW Disinfection Target Temp"
+      dhw_disinfection_duration:
+        name: "DHW Disinfection Duration"
+      dhw_disinfection_max_time:
+        name: "DHW Disinfection Max Time"
+
+      # --- FSV: HP tank thresholds ---
+      hp_max_temp_alone:
+        name: "HP Max Temp Alone"
+      hp_temp_diff_off:
+        name: "HP Temp Diff for OFF"
+      hp_temp_diff_on:
+        name: "HP Temp Diff for ON"
+
+      # --- FSV: Heating / DHW priority ---
+      heating_dhw_priority:
+        name: "Heating DHW Priority"
+      heating_priority_changeover_temp:
+        name: "Heating Priority Changeover Temp"
+      heating_dhw_off_outdoor_temp:
+        name: "Heating DHW OFF Outdoor Temp"
+
+      # --- FSV: Inverter pump ---
+      heating_inverter_pump_application:
+        name: "Heating Inverter Pump Application"
+      heating_inverter_pump_target_delta:
+        name: "Heating Inverter Pump Target Delta"
+
+    # ==============================================================
+    # Ducted AC Units
+    # Climate entity with cool/heat/dry/fan_only/auto + fan speeds
+    # ==============================================================
+    - address: "20.00.01"
+      type: ac
+      climate:
+        name: "AC LP Bedroom"
+      room_temperature:
+        name: "LP Bedroom Temperature"
+      indoor_eva_in_temperature:
+        name: "LP Bedroom EVA In"
+      indoor_eva_out_temperature:
+        name: "LP Bedroom EVA Out"
+
+    - address: "20.00.02"
+      type: ac
+      climate:
+        name: "AC Offices"
+      room_temperature:
+        name: "Offices Temperature"
+      indoor_eva_in_temperature:
+        name: "Offices EVA In"
+      indoor_eva_out_temperature:
+        name: "Offices EVA Out"
+
+    - address: "20.00.04"
+      type: ac
+      climate:
+        name: "AC Kids Bedroom"
+      room_temperature:
+        name: "Kids Bedroom Temperature"
+      indoor_eva_in_temperature:
+        name: "Kids Bedroom EVA In"
+      indoor_eva_out_temperature:
+        name: "Kids Bedroom EVA Out"
+
+    - address: "20.00.06"
+      type: ac
+      climate:
+        name: "AC Living Room"
+      room_temperature:
+        name: "Living Room Temperature"
+      indoor_eva_in_temperature:
+        name: "Living Room EVA In"
+      indoor_eva_out_temperature:
+        name: "Living Room EVA Out"
+
+    # ==============================================================
+    # Outdoor Unit
+    # Sensors only — power, energy, temperature, error codes
+    # ==============================================================
+    - address: "10.00.00"
+      type: outdoor
+      error_code:
+        name: "Error Code"
+      outdoor_operation_odu_mode:
+        name: "ODU Mode"
+      outdoor_operation_heatcool:
+        name: "ODU Heat/Cool"
+      outdoor_instantaneous_power:
+        name: "Outdoor Instantaneous Power"
+      outdoor_cumulative_energy:
+        name: "Outdoor Cumulative Energy"
+      outdoor_current:
+        name: "Outdoor Current"
+      outdoor_voltage:
+        name: "Outdoor Voltage"
+      outdoor_temperature:
+        name: "Outdoor Temperature"
+
+      # Custom sensors for arbitrary message codes
+      custom_sensor:
+        - name: "Compressor Frequency"
+          message: 0x8238
+          device_class: frequency
+          state_class: measurement
+          unit_of_measurement: Hz
+          accuracy_decimals: 1
+          divisor: 10
+          signed: true
+        - name: "Fan Speed"
+          message: 0x823D
+          state_class: measurement
+          unit_of_measurement: RPM
+          accuracy_decimals: 0
