@@ -41,7 +41,7 @@ GND ──────────────► GND
 
 ```yaml
 external_components:
-  - source: github://paolostivanin/esphome-nasa-bridge@main
+  - source: github://paolostivanin/nasactl@main
     components: [nasactl]
 
 uart:
