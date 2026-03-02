@@ -3,6 +3,7 @@
 #include "esphome/components/sensor/sensor.h"
 #include "esphome/components/nasactl/nasa_base.h"
 #include "esphome/components/nasactl/nasa_controller.h"
+#include "esphome/components/nasactl/nasa_message.h"
 
 namespace nasactl {
 
@@ -20,7 +21,12 @@ class NasactlSensor : public esphome::sensor::Sensor, public NasaBase {
   void on_receive(long value) override {
     float result;
     if (signed_) {
-      result = static_cast<float>(static_cast<int16_t>(value));
+      auto type = static_cast<MessageSetType>((get_message() >> 9) & 0x03);
+      if (type == MessageSetType::LongVariable) {
+        result = static_cast<float>(static_cast<int32_t>(value));
+      } else {
+        result = static_cast<float>(static_cast<int16_t>(value));
+      }
     } else {
       result = static_cast<float>(value);
     }

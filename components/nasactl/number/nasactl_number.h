@@ -3,6 +3,9 @@
 #include "esphome/components/number/number.h"
 #include "esphome/components/nasactl/nasa_base.h"
 #include "esphome/components/nasactl/nasa_controller.h"
+#include "esphome/components/nasactl/nasa_message.h"
+
+#include <cmath>
 
 namespace nasactl {
 
@@ -20,7 +23,12 @@ class NasactlNumber : public esphome::number::Number, public NasaBase {
   void on_receive(long value) override {
     float result;
     if (signed_) {
-      result = static_cast<float>(static_cast<int16_t>(value));
+      auto type = static_cast<MessageSetType>((get_message() >> 9) & 0x03);
+      if (type == MessageSetType::LongVariable) {
+        result = static_cast<float>(static_cast<int32_t>(value));
+      } else {
+        result = static_cast<float>(static_cast<int16_t>(value));
+      }
     } else {
       result = static_cast<float>(value);
     }
@@ -37,7 +45,7 @@ class NasactlNumber : public esphome::number::Number, public NasaBase {
     if (divisor_ != 1.0f) raw *= divisor_;
     if (multiplier_ != 1.0f) raw /= multiplier_;
 
-    parent_->write(get_address(), get_message(), static_cast<long>(raw));
+    parent_->write(get_address(), get_message(), std::lroundf(raw));
   }
 
  private:
