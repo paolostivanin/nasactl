@@ -252,7 +252,7 @@ ENTITIES = {
     "heating_water_outlet_temp_upper": {
         "type": "number",
         "code": 0x424E,
-        "min": 37, "max": 70, "step": 1,
+        "min": 37, "max": 55, "step": 1,
         "unit": "°C",
         "device_class": "temperature",
         "icon": "mdi:thermometer-chevron-up",
@@ -302,7 +302,7 @@ ENTITIES = {
     "heating_water_temp_cold_outdoor": {
         "type": "number",
         "code": 0x4256,
-        "min": 17, "max": 65, "step": 1,
+        "min": 17, "max": 55, "step": 1,
         "unit": "°C",
         "device_class": "temperature",
         "icon": "mdi:thermometer-high",
@@ -314,7 +314,7 @@ ENTITIES = {
     "heating_water_temp_warm_outdoor": {
         "type": "number",
         "code": 0x4257,
-        "min": 17, "max": 65, "step": 1,
+        "min": 17, "max": 55, "step": 1,
         "unit": "°C",
         "device_class": "temperature",
         "icon": "mdi:thermometer-low",
@@ -428,7 +428,7 @@ ENTITIES = {
     "hp_max_temp_alone": {
         "type": "number",
         "code": 0x4260,
-        "min": 45, "max": 55, "step": 1,
+        "min": 45, "max": 53, "step": 1,
         "unit": "°C",
         "device_class": "temperature",
         "icon": "mdi:heat-pump",
