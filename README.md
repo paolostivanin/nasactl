@@ -1,41 +1,29 @@
 # nasactl
 
-ESPHome component for Samsung HVAC systems using the NASA (Network Attached Samsung Appliance) protocol.
+ESPHome external component for Samsung systems using the NASA (Network Attached Samsung Appliance) protocol. Supports air conditioning, heat pumps, DHW (domestic hot water) tanks, underfloor heating, and other equipment connected via the RS-485 bus.
 
 ## Features
 
 - **NASA protocol only** — clean, focused implementation
 - **Easy to extend** — add new entities by editing one line in `const.py`, no C++ needed
 - **FSV auto-read** — Field Setting Values are polled on startup in batches with configurable delay and periodic re-poll
-- **Proper device types** — hydro units get individual entities (no useless climate card), ACs get a real climate entity
-- **AC climate modes** — Cool, Heat, Dry, Fan Only, Auto
-- **AC fan speeds** — Auto, Low, Medium, High, Turbo
+- **Proper device types** — hydro units get individual entities, ACs get a climate entity with modes and fan speeds
+- **AC climate** — Cool, Heat, Dry, Fan Only, Auto modes with Auto, Low, Medium, High, Turbo fan speeds
 - **Custom sensors** — read any NASA message code without modifying the component
 
 ## Supported Hardware
 
 Tested with:
-- Samsung EHS TDM Plus heat pump (hydro unit)
+- Samsung EHS TDM Plus heat pump (hydro unit) with underfloor heating
 - Samsung ducted AC indoor units
 - DHW (Domestic Hot Water) tank
 - 3-way valve
 
-Should work with any Samsung HVAC equipment using the NASA protocol via RS-485 bus.
+Should work with any Samsung equipment using the NASA protocol via RS-485 bus.
 
 ## Hardware Setup
 
-You need an ESP32 board (e.g., M5Stack Atom Lite) connected to the Samsung NASA bus via an RS-485 transceiver (e.g., MAX485). Connect the transceiver to the F1/F2 terminals on your Samsung unit.
-
-```
-ESP32               MAX485              Samsung Unit
-──────              ──────              ────────────
-GPIO19 (TX) ──────► DI
-GPIO22 (RX) ◄────── RO
-GPIO23 (opt) ─────► DE/RE               F1 ◄────── A
-                                         F2 ◄────── B
-3.3V ─────────────► VCC
-GND ──────────────► GND
-```
+See the [Hardware Installation wiki](https://docs.samsung-hvac.aran.net.tr/wiki/Hardware-Installation/) for wiring instructions, recommended boards, and RS-485 transceiver options.
 
 ## Quick Start
 
@@ -113,29 +101,21 @@ Each device requires an `address` (format `XX.XX.XX`) and a `type`:
 
 ### Climate Entity (AC only)
 
-AC devices support a climate entity with:
-
-| Modes | Fan Speeds |
-|-------|-----------|
-| Cool | Auto |
-| Heat | Low |
-| Dry (dehumidify) | Medium |
-| Fan Only (ventilator) | High |
-| Auto (heat/cool) | Turbo |
+AC devices support a climate entity with modes (Cool, Heat, Dry, Fan Only, Auto) and fan speeds (Auto, Low, Medium, High, Turbo).
 
 ### Custom Sensors
 
-Read any NASA message code without modifying the component:
+Read any NASA message code without modifying the component. Useful for codes not yet defined in `const.py`:
 
 ```yaml
 - address: "10.00.00"
   type: outdoor
   custom_sensor:
-    - name: "Compressor Frequency"
-      message: 0x8238
-      device_class: frequency
+    - name: "Condenser Mid Temperature"
+      message: 0x8206
+      device_class: temperature
       state_class: measurement
-      unit_of_measurement: Hz
+      unit_of_measurement: "°C"
       accuracy_decimals: 1
       divisor: 10        # optional: raw value / 10
       signed: true       # optional: treat as int16

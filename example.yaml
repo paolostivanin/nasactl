@@ -1,5 +1,5 @@
 ################################################
-# nasactl — Samsung NASA HVAC Bridge Example  #
+# nasactl — Samsung NASA Bridge Example        #
 #                                              #
 # Adjust addresses, names, and entities to     #
 # match your system. Remove what you don't     #
@@ -46,7 +46,7 @@ web_server:
 
 # Pull the nasactl component from GitHub
 external_components:
-  - source: github://paolostivanin/esphome-nasa-bridge@main
+  - source: github://paolostivanin/nasactl@main
     components: [nasactl]
     refresh: 0s
 
