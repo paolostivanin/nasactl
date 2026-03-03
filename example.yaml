@@ -214,40 +214,7 @@ nasactl:
     - address: "20.00.01"
       type: ac
       climate:
-        name: "AC LP Bedroom"
-      room_temperature:
-        name: "LP Bedroom Temperature"
-      indoor_eva_in_temperature:
-        name: "LP Bedroom EVA In"
-      indoor_eva_out_temperature:
-        name: "LP Bedroom EVA Out"
-
-    - address: "20.00.02"
-      type: ac
-      climate:
-        name: "AC Offices"
-      room_temperature:
-        name: "Offices Temperature"
-      indoor_eva_in_temperature:
-        name: "Offices EVA In"
-      indoor_eva_out_temperature:
-        name: "Offices EVA Out"
-
-    - address: "20.00.04"
-      type: ac
-      climate:
-        name: "AC Kids Bedroom"
-      room_temperature:
-        name: "Kids Bedroom Temperature"
-      indoor_eva_in_temperature:
-        name: "Kids Bedroom EVA In"
-      indoor_eva_out_temperature:
-        name: "Kids Bedroom EVA Out"
-
-    - address: "20.00.06"
-      type: ac
-      climate:
-        name: "AC Living Room"
+        name: "AC Living room"
       room_temperature:
         name: "Living Room Temperature"
       indoor_eva_in_temperature:
