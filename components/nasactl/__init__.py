@@ -350,7 +350,7 @@ async def to_code(config):
         [f"-I{src_base}"],
     )
 
-    cg.add_global(cg.RawExpression('#include "esphome/components/nasactl/nasactl.h"'))
+    cg.add_global(cg.RawStatement('#include "esphome/components/nasactl/nasactl.h"'))
 
     # Create NasaClient (UART communication layer)
     client_var = cg.new_Pvariable(config[CONF_CLIENT_ID])
