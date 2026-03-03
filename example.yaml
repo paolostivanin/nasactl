@@ -266,7 +266,7 @@ nasactl:
       outdoor_operation_odu_mode:
         name: "ODU Mode"
       outdoor_operation_heatcool:
-        name: "ODU Heat/Cool"
+        name: "ODU Heat_Cool"
       outdoor_instantaneous_power:
         name: "Outdoor Instantaneous Power"
       outdoor_cumulative_energy:
