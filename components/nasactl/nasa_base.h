@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include "nasa_device.h"
+#include "nasa_message.h"
 
 namespace nasactl {
 
@@ -38,10 +39,23 @@ class NasaBase {
   NasaDevice *device_{nullptr};
 };
 
-// Base class for writable entities (numbers, selects, switches)
-class NasaWrite : public virtual NasaBase {
- public:
-  virtual void write_raw(long value) = 0;
-};
+// Convert a raw NASA value to float, applying signed interpretation, divisor, and multiplier.
+inline float nasa_raw_to_float(long value, uint16_t message, bool is_signed,
+                               float divisor, float multiplier) {
+  float result;
+  if (is_signed) {
+    auto type = static_cast<MessageSetType>((message >> 9) & 0x03);
+    if (type == MessageSetType::LongVariable) {
+      result = static_cast<float>(static_cast<int32_t>(value));
+    } else {
+      result = static_cast<float>(static_cast<int16_t>(value));
+    }
+  } else {
+    result = static_cast<float>(value);
+  }
+  if (divisor != 1.0f) result /= divisor;
+  if (multiplier != 1.0f) result *= multiplier;
+  return result;
+}
 
 }  // namespace nasactl

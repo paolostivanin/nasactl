@@ -62,18 +62,22 @@ DecodeResult Packet::decode(const std::vector<uint8_t> &data) {
 
   // Parse addresses and command
   uint32_t offset = 3;  // skip start + size
-  source.decode(data, offset);       // 3 bytes
-  destination.decode(data, offset);  // 3 bytes
-  command.decode(data, offset);      // 3 bytes
+  if (!source.decode(data, offset) ||
+      !destination.decode(data, offset) ||
+      !command.decode(data, offset))
+    return DecodeResult::InvalidSize;
 
   // Parse messages
+  if (offset >= data.size())
+    return DecodeResult::InvalidSize;
   uint8_t msg_count = data[offset];
   offset++;
 
   messages.clear();
   for (uint8_t i = 0; i < msg_count && offset < crc_offset; i++) {
     MessageSet ms;
-    ms.decode(data, offset);
+    if (!ms.decode(data, offset))
+      return DecodeResult::InvalidSize;
     messages.push_back(ms);
   }
 

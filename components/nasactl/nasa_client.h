@@ -64,6 +64,8 @@ class NasaClient : public esphome::Component, public esphome::uart::UARTDevice {
   uint8_t min_retries_{1};
   uint32_t send_timeout_{4000};
 
+  static const size_t MAX_SEND_QUEUE_SIZE = 64;
+
   std::vector<uint8_t> rx_buffer_;
   std::deque<OutgoingPacket> send_queue_;
   uint32_t last_rx_time_{0};

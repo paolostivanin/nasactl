@@ -21,6 +21,8 @@ class LimitedQueue {
   }
 
   T pop() {
+    if (queue_.empty())
+      return T{};
     T item = queue_.front();
     queue_.pop();
     return item;

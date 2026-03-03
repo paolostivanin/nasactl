@@ -16,8 +16,7 @@ Fields:
   icon        (optional) MDI icon
   divisor     (optional) Read: x/divisor, Write: x*divisor
   multiplier  (optional) Read: x*multiplier, Write: x/multiplier
-  signed      (optional) If True, treat raw value as int16. Default False for
-                         sensors, True for temperature sensors with divisor
+  signed      (optional) If True, treat raw value as int16. Default False
   fsv         (optional) If True, this is a Field Setting Value (polled on
                          startup, not broadcast)
   min         (optional) Number min value
@@ -665,7 +664,3 @@ ENTITIES = {
         },
     },
 }
-
-# Custom sensor support: allows arbitrary message codes via YAML
-# These are created per-device and don't need entries in ENTITIES
-CUSTOM_SENSOR_SCHEMA_KEY = "custom_sensor"

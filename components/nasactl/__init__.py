@@ -190,16 +190,27 @@ def _validate_address(value):
     return value
 
 
+def _validate_device(config):
+    if CONF_CLIMATE in config and config[CONF_DEVICE_TYPE] != "ac":
+        raise cv.Invalid(
+            "'climate' is only supported for 'ac' device type, "
+            f"but device type is '{config[CONF_DEVICE_TYPE]}'")
+    return config
+
+
 # Device schema
-DEVICE_SCHEMA = cv.Schema({
-    cv.GenerateID(): cv.declare_id(NasaDevice),
-    cv.Required(CONF_ADDRESS): _validate_address,
-    cv.Required(CONF_DEVICE_TYPE): cv.one_of("hydro", "ac", "outdoor", upper=False),
-    cv.Optional(CONF_CLIMATE): climate.climate_schema(NasactlClimate),
-    cv.Optional(CONF_CUSTOM_SENSOR, default=[]):
-        cv.ensure_list(CUSTOM_SENSOR_SCHEMA),
-    **_build_device_entity_schemas(),
-})
+DEVICE_SCHEMA = cv.All(
+    cv.Schema({
+        cv.GenerateID(): cv.declare_id(NasaDevice),
+        cv.Required(CONF_ADDRESS): _validate_address,
+        cv.Required(CONF_DEVICE_TYPE): cv.one_of("hydro", "ac", "outdoor", upper=False),
+        cv.Optional(CONF_CLIMATE): climate.climate_schema(NasactlClimate),
+        cv.Optional(CONF_CUSTOM_SENSOR, default=[]):
+            cv.ensure_list(CUSTOM_SENSOR_SCHEMA),
+        **_build_device_entity_schemas(),
+    }),
+    _validate_device,
+)
 
 # Main component schema
 CONFIG_SCHEMA = cv.Schema({
@@ -235,7 +246,6 @@ async def _create_sensor(config, edef, dev, ctrl):
     label = str(config.get(CONF_NAME, ""))
 
     var = await sensor.new_sensor(config, label, code, mode, dev)
-    cg.add(var.set_parent(ctrl))
     if "divisor" in edef:
         cg.add(var.set_divisor(edef["divisor"]))
     if "multiplier" in edef:
@@ -297,7 +307,6 @@ async def _create_binary_sensor(config, edef, dev, ctrl):
     label = str(config.get(CONF_NAME, ""))
 
     var = await binary_sensor.new_binary_sensor(config, label, code, mode, dev)
-    cg.add(var.set_parent(ctrl))
     cg.add(ctrl.register_component(var))
 
 
@@ -307,7 +316,6 @@ async def _create_text_sensor(config, edef, dev, ctrl):
     label = str(config.get(CONF_NAME, ""))
 
     var = await text_sensor.new_text_sensor(config, label, code, mode, dev)
-    cg.add(var.set_parent(ctrl))
     if "mapping" in edef:
         for val, txt in edef["mapping"].items():
             cg.add(var.add_mapping(val, txt))
@@ -409,7 +417,6 @@ async def to_code(config):
 
             var = await sensor.new_sensor(
                 cust, label, msg_code, CONTROLLER_MODE_STATUS, dev)
-            cg.add(var.set_parent(ctrl))
             if "divisor" in cust:
                 cg.add(var.set_divisor(cust["divisor"]))
             if "multiplier" in cust:

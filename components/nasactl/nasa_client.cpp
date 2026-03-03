@@ -151,6 +151,10 @@ void NasaClient::send_write(const Address &dest, uint16_t message_number, long v
 }
 
 void NasaClient::queue_packet(uint8_t id, std::vector<uint8_t> &&data) {
+  if (send_queue_.size() >= MAX_SEND_QUEUE_SIZE) {
+    ESP_LOGW(TAG, "Send queue full (%zu), dropping packet", send_queue_.size());
+    return;
+  }
   OutgoingPacket out;
   out.id = id;
   out.data = std::move(data);

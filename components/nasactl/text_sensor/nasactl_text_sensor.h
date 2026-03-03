@@ -5,7 +5,6 @@
 
 #include "esphome/components/text_sensor/text_sensor.h"
 #include "esphome/components/nasactl/nasa_base.h"
-#include "esphome/components/nasactl/nasa_controller.h"
 
 namespace nasactl {
 
@@ -14,8 +13,6 @@ class NasactlTextSensor : public esphome::text_sensor::TextSensor, public NasaBa
   NasactlTextSensor(const std::string &label, uint16_t message, ControllerMode mode,
                     NasaDevice *device)
       : NasaBase(label, message, mode, device) {}
-
-  void set_parent(NasaController *parent) { parent_ = parent; }
 
   void add_mapping(long key, const std::string &text) {
     mapping_[key] = text;
@@ -40,7 +37,6 @@ class NasactlTextSensor : public esphome::text_sensor::TextSensor, public NasaBa
   }
 
  private:
-  NasaController *parent_{nullptr};
   std::map<long, std::string> mapping_;
   long last_value_{-999999};
 };

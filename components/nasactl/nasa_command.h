@@ -38,7 +38,9 @@ struct Command {
     return counter++;
   }
 
-  void decode(const std::vector<uint8_t> &data, uint32_t &offset) {
+  bool decode(const std::vector<uint8_t> &data, uint32_t &offset) {
+    if (offset + 3 > data.size())
+      return false;
     uint8_t b0 = data[offset];
     uint8_t b1 = data[offset + 1];
     packet_number = data[offset + 2];
@@ -50,6 +52,7 @@ struct Command {
     data_type = static_cast<DataType>(b1 & 0x0F);
 
     offset += 3;
+    return true;
   }
 
   std::vector<uint8_t> encode() const {

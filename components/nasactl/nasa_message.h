@@ -23,21 +23,29 @@ struct MessageSet {
     type = static_cast<MessageSetType>((msg_num >> 9) & 0x03);
   }
 
-  void decode(const std::vector<uint8_t> &data, uint32_t &offset) {
+  bool decode(const std::vector<uint8_t> &data, uint32_t &offset) {
+    if (offset + 2 > data.size())
+      return false;
     message_number = (static_cast<uint16_t>(data[offset]) << 8) | data[offset + 1];
     type = static_cast<MessageSetType>((message_number >> 9) & 0x03);
     offset += 2;
 
     switch (type) {
       case MessageSetType::Enum:
+        if (offset + 1 > data.size())
+          return false;
         value = data[offset];
         offset += 1;
         break;
       case MessageSetType::Variable:
+        if (offset + 2 > data.size())
+          return false;
         value = (static_cast<int16_t>(data[offset]) << 8) | data[offset + 1];
         offset += 2;
         break;
       case MessageSetType::LongVariable:
+        if (offset + 4 > data.size())
+          return false;
         value = (static_cast<long>(data[offset]) << 24) |
                 (static_cast<long>(data[offset + 1]) << 16) |
                 (static_cast<long>(data[offset + 2]) << 8) |
@@ -45,8 +53,12 @@ struct MessageSet {
         offset += 4;
         break;
       case MessageSetType::Structure: {
+        if (offset + 1 > data.size())
+          return false;
         uint8_t len = data[offset];
         offset += 1;
+        if (offset + len > data.size())
+          return false;
         // For structures, store the first 4 bytes as value for simple access
         value = 0;
         for (uint8_t i = 0; i < len && i < 4; i++) {
@@ -56,6 +68,7 @@ struct MessageSet {
         break;
       }
     }
+    return true;
   }
 
   void encode(std::vector<uint8_t> &data) const {

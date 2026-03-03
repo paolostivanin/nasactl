@@ -37,9 +37,13 @@ struct Address {
   static Address parse(const std::string &str) {
     Address addr;
     if (str.length() >= 8) {
-      addr.klass = static_cast<AddressClass>(std::stoi(str.substr(0, 2), nullptr, 16));
-      addr.channel = std::stoi(str.substr(3, 2), nullptr, 16);
-      addr.address = std::stoi(str.substr(6, 2), nullptr, 16);
+      try {
+        addr.klass = static_cast<AddressClass>(std::stoi(str.substr(0, 2), nullptr, 16));
+        addr.channel = std::stoi(str.substr(3, 2), nullptr, 16);
+        addr.address = std::stoi(str.substr(6, 2), nullptr, 16);
+      } catch (...) {
+        // Return default address on parse failure
+      }
     }
     return addr;
   }
@@ -52,11 +56,14 @@ struct Address {
     return {AddressClass::BroadcastSetLayer, 0x00, 0x20};
   }
 
-  void decode(const std::vector<uint8_t> &data, uint32_t &offset) {
+  bool decode(const std::vector<uint8_t> &data, uint32_t &offset) {
+    if (offset + 3 > data.size())
+      return false;
     klass = static_cast<AddressClass>(data[offset]);
     channel = data[offset + 1];
     address = data[offset + 2];
     offset += 3;
+    return true;
   }
 
   std::vector<uint8_t> encode() const {
