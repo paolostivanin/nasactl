@@ -37,13 +37,12 @@ struct Address {
   static Address parse(const std::string &str) {
     Address addr;
     if (str.length() >= 8) {
-      try {
-        addr.klass = static_cast<AddressClass>(std::stoi(str.substr(0, 2), nullptr, 16));
-        addr.channel = std::stoi(str.substr(3, 2), nullptr, 16);
-        addr.address = std::stoi(str.substr(6, 2), nullptr, 16);
-      } catch (...) {
-        // Return default address on parse failure
-      }
+      unsigned long v1 = strtoul(str.c_str(), nullptr, 16);
+      unsigned long v2 = strtoul(str.c_str() + 3, nullptr, 16);
+      unsigned long v3 = strtoul(str.c_str() + 6, nullptr, 16);
+      addr.klass = static_cast<AddressClass>(v1 & 0xFF);
+      addr.channel = v2 & 0xFF;
+      addr.address = v3 & 0xFF;
     }
     return addr;
   }
