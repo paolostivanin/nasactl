@@ -8,7 +8,7 @@
 
 namespace nasactl {
 
-// AC modes: Cool=0, Dry=1, Fan=2, Heat=3, Auto=4 (Samsung NASA)
+// AC modes: Auto=0, Cool=1, Dry=2, Fan=3, Heat=4 (Samsung NASA)
 // Fan speeds: Auto=0, Low=1, Mid=2, High=3, Turbo=4 (Samsung NASA)
 
 class NasactlClimate : public esphome::climate::Climate, public esphome::Component {
