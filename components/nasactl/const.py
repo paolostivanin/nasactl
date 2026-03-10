@@ -97,7 +97,7 @@ ENTITIES = {
         "accuracy": 1,
         "icon": "mdi:flash",
     },
-    "indoor_generated_power": {
+    "hp_generated_power_last_minute": {
         "type": "sensor",
         "code": 0x4426,
         "unit": "W",
@@ -107,7 +107,7 @@ ENTITIES = {
         "icon": "mdi:flash",
         "signed": True,
     },
-    "indoor_cumulative_energy": {
+    "hp_produced_energy_total": {
         "type": "sensor",
         "code": 0x4427,
         "unit": "kWh",
@@ -163,7 +163,7 @@ ENTITIES = {
         "divisor": 10,
         "signed": True,
     },
-    "outdoor_instantaneous_power": {
+    "hp_consumed_power_last_minute": {
         "type": "sensor",
         "code": 0x8413,
         "unit": "W",
@@ -172,7 +172,7 @@ ENTITIES = {
         "accuracy": 1,
         "icon": "mdi:flash",
     },
-    "outdoor_cumulative_energy": {
+    "hp_consumed_energy_total": {
         "type": "sensor",
         "code": 0x8414,
         "unit": "kWh",
