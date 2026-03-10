@@ -198,6 +198,16 @@ def _validate_device(config):
     return config
 
 
+def _validate_devices(config):
+    addresses = set()
+    for dev in config[CONF_DEVICES]:
+        addr = dev[CONF_ADDRESS]
+        if addr in addresses:
+            raise cv.Invalid(f"Duplicate device address '{addr}'")
+        addresses.add(addr)
+    return config
+
+
 # Device schema
 DEVICE_SCHEMA = cv.All(
     cv.Schema({
@@ -213,19 +223,22 @@ DEVICE_SCHEMA = cv.All(
 )
 
 # Main component schema
-CONFIG_SCHEMA = cv.Schema({
-    cv.GenerateID(): cv.declare_id(NasaController),
-    cv.GenerateID(CONF_CLIENT_ID): cv.declare_id(NasaClient),
-    cv.Optional(CONF_FLOW_CONTROL_PIN): pins.gpio_output_pin_schema,
-    cv.Optional(CONF_SILENCE_INTERVAL, default=100): cv.int_range(50, 1000),
-    cv.Optional(CONF_RETRY_INTERVAL, default=500): cv.int_range(200, 5000),
-    cv.Optional(CONF_MIN_RETRIES, default=1): cv.int_range(1, 10),
-    cv.Optional(CONF_SEND_TIMEOUT, default=4000): cv.int_range(1000, 10000),
-    cv.Optional(CONF_DEBUG_LOG_MESSAGES, default=False): cv.boolean,
-    cv.Optional(CONF_DEBUG_LOG_UNDEFINED, default=False): cv.boolean,
-    cv.Optional(CONF_FSV_READ, default={}): FSV_READ_SCHEMA,
-    cv.Required(CONF_DEVICES): cv.ensure_list(DEVICE_SCHEMA),
-}).extend(uart.UART_DEVICE_SCHEMA).extend(cv.polling_component_schema("30s"))
+CONFIG_SCHEMA = cv.All(
+    cv.Schema({
+        cv.GenerateID(): cv.declare_id(NasaController),
+        cv.GenerateID(CONF_CLIENT_ID): cv.declare_id(NasaClient),
+        cv.Optional(CONF_FLOW_CONTROL_PIN): pins.gpio_output_pin_schema,
+        cv.Optional(CONF_SILENCE_INTERVAL, default=100): cv.int_range(50, 1000),
+        cv.Optional(CONF_RETRY_INTERVAL, default=500): cv.int_range(200, 5000),
+        cv.Optional(CONF_MIN_RETRIES, default=1): cv.int_range(1, 10),
+        cv.Optional(CONF_SEND_TIMEOUT, default=4000): cv.int_range(1000, 10000),
+        cv.Optional(CONF_DEBUG_LOG_MESSAGES, default=False): cv.boolean,
+        cv.Optional(CONF_DEBUG_LOG_UNDEFINED, default=False): cv.boolean,
+        cv.Optional(CONF_FSV_READ, default={}): FSV_READ_SCHEMA,
+        cv.Required(CONF_DEVICES): cv.ensure_list(DEVICE_SCHEMA),
+    }).extend(uart.UART_DEVICE_SCHEMA).extend(cv.polling_component_schema("30s")),
+    _validate_devices,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -338,13 +351,12 @@ ENTITY_CREATORS = {
 
 async def to_code(config):
     import os
-    from esphome.core import CORE
 
     # Add the source component directory to the compiler include path so that
     # subdirectory headers (sensor/, number/, climate/, etc.) are found.
     # ESPHome only copies top-level component files to the build tree.
     # Subdirectory .cpp files are pulled in via nasactl_entities.cpp (#include).
-    src_base = os.path.join(CORE.config_dir, "components", "nasactl")
+    src_base = os.path.dirname(__file__)
     cg.add_platformio_option(
         "build_flags",
         [f"-I{src_base}"],

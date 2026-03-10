@@ -34,7 +34,7 @@ class NasactlClimate : public esphome::climate::Climate, public esphome::Compone
  private:
   NasaController *controller_{nullptr};
   NasaDevice *device_{nullptr};
-  esphome::climate::ClimateMode last_active_mode_{esphome::climate::CLIMATE_MODE_HEAT};
+  esphome::climate::ClimateMode last_active_mode_{esphome::climate::CLIMATE_MODE_HEAT_COOL};
 };
 
 // Helper entities that route NASA messages to the climate entity

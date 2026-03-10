@@ -71,6 +71,7 @@ class NasaController : public esphome::PollingComponent {
   uint32_t fsv_interval_{0};  // 0 = startup only
 
   bool fsv_initial_poll_done_{false};
+  uint32_t fsv_setup_time_{0};
   uint32_t fsv_last_poll_time_{0};
   std::vector<uint16_t> fsv_codes_;           // All FSV message codes to poll
   size_t fsv_batch_index_{0};                 // Current position in fsv_codes_

@@ -40,7 +40,7 @@ struct MessageSet {
       case MessageSetType::Variable:
         if (offset + 2 > data.size())
           return false;
-        value = (static_cast<int16_t>(data[offset]) << 8) | data[offset + 1];
+        value = (static_cast<uint16_t>(data[offset]) << 8) | data[offset + 1];
         offset += 2;
         break;
       case MessageSetType::LongVariable:

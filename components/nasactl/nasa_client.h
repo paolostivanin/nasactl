@@ -43,7 +43,7 @@ class NasaClient : public esphome::Component, public esphome::uart::UARTDevice {
   }
 
   // Send methods
-  void send_read(const Address &dest, const std::vector<uint16_t> &message_numbers);
+  void send_read(const std::vector<uint16_t> &message_numbers);
   void send_write(const Address &dest, uint16_t message_number, long value);
 
   // Queue a raw packet with retry (id > 0) or immediate (id = 0)

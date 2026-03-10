@@ -10,9 +10,9 @@
 
 namespace nasactl {
 
-static const uint8_t PACKET_START = 0x32;
-static const uint8_t PACKET_END = 0x34;
-static const uint16_t PACKET_MAX_SIZE = 1500;
+static constexpr uint8_t PACKET_START = 0x32;
+static constexpr uint8_t PACKET_END = 0x34;
+static constexpr uint16_t PACKET_MAX_SIZE = 1500;
 
 enum class DecodeResult {
   Ok,

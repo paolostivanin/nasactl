@@ -14,6 +14,8 @@ void NasaClient::setup() {
     flow_control_pin_->digital_write(false);  // RX mode
   }
 
+  rx_buffer_.reserve(256);
+
   // Register batch dispatcher callback for read requests
   read_dispatcher_.set_callback([this](std::vector<uint16_t> &msg_numbers) {
     auto pkt = Packet::create_read(Address::broadcast(), msg_numbers);
@@ -91,8 +93,8 @@ void NasaClient::write_data_() {
 
   auto &front = send_queue_.front();
 
-  // Check timeout
-  if (front.timeout > 0 && now > front.timeout) {
+  // Check timeout (uses signed comparison for millis() wraparound safety)
+  if (front.timeout > 0 && static_cast<int32_t>(now - front.timeout) >= 0) {
     if (front.retry_count >= min_retries_) {
       ESP_LOGW(TAG, "Packet id=%d timed out after %d retries", front.id, front.retry_count);
       send_queue_.pop_front();
@@ -100,8 +102,8 @@ void NasaClient::write_data_() {
     }
   }
 
-  // Check retry interval
-  if (front.next_retry > 0 && now < front.next_retry)
+  // Check retry interval (uses signed comparison for millis() wraparound safety)
+  if (front.next_retry > 0 && static_cast<int32_t>(now - front.next_retry) < 0)
     return;
 
   // Transmit
@@ -138,7 +140,7 @@ void NasaClient::after_write_() {
   }
 }
 
-void NasaClient::send_read(const Address &dest, const std::vector<uint16_t> &message_numbers) {
+void NasaClient::send_read(const std::vector<uint16_t> &message_numbers) {
   for (auto msg_num : message_numbers) {
     read_dispatcher_.push(msg_num);
   }

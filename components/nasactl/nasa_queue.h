@@ -5,6 +5,8 @@
 #include <queue>
 #include <vector>
 
+#include "esphome/core/log.h"
+
 namespace nasactl {
 
 // Size-capped queue that silently drops items when full
@@ -14,8 +16,10 @@ class LimitedQueue {
   explicit LimitedQueue(size_t max_size) : max_size_(max_size) {}
 
   bool push(const T &item) {
-    if (queue_.size() >= max_size_)
+    if (queue_.size() >= max_size_) {
+      ESP_LOGW("nasactl.queue", "Queue full (%zu), dropping item", max_size_);
       return false;
+    }
     queue_.push(item);
     return true;
   }

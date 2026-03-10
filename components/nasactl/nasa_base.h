@@ -40,16 +40,14 @@ class NasaBase {
 };
 
 // Convert a raw NASA value to float, applying signed interpretation, divisor, and multiplier.
-inline float nasa_raw_to_float(long value, uint16_t message, bool is_signed,
+// When is_signed is true, always cast to int16_t regardless of message type.
+// This matches the Samsung NASA convention where signed values are 16-bit,
+// even when carried in a LongVariable (32-bit) field.
+inline float nasa_raw_to_float(long value, uint16_t /*message*/, bool is_signed,
                                float divisor, float multiplier) {
   float result;
   if (is_signed) {
-    auto type = static_cast<MessageSetType>((message >> 9) & 0x03);
-    if (type == MessageSetType::LongVariable) {
-      result = static_cast<float>(static_cast<int32_t>(value));
-    } else {
-      result = static_cast<float>(static_cast<int16_t>(value));
-    }
+    result = static_cast<float>(static_cast<int16_t>(value & 0xFFFF));
   } else {
     result = static_cast<float>(value);
   }

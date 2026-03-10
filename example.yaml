@@ -118,8 +118,10 @@ nasactl:
         name: "Water Law Target Flow Temp"
       indoor_power_consumption:
         name: "Indoor Power Consumption"
-      generated_power_last_minute:
-        name: "Generated Power Last Minute"
+      indoor_generated_power:
+        name: "Indoor Generated Power"
+      indoor_cumulative_energy:
+        name: "Indoor Cumulative Energy"
       defrost_status:
         name: "Defrost Status"
       water_pump_status:
@@ -230,10 +232,10 @@ nasactl:
       type: outdoor
       error_code:
         name: "Error Code"
-      outdoor_operation_odu_mode:
-        name: "ODU Mode"
-      outdoor_operation_heatcool:
-        name: "ODU Heat_Cool"
+      outdoor_service_operation:
+        name: "Outdoor Service Operation"
+      outdoor_driving_mode:
+        name: "Outdoor Driving Mode"
       outdoor_instantaneous_power:
         name: "Outdoor Instantaneous Power"
       outdoor_cumulative_energy:

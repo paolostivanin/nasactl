@@ -1,5 +1,6 @@
 #pragma once
 
+#include <climits>
 #include <map>
 #include <string>
 
@@ -38,7 +39,7 @@ class NasactlTextSensor : public esphome::text_sensor::TextSensor, public NasaBa
 
  private:
   std::map<long, std::string> mapping_;
-  long last_value_{-999999};
+  long last_value_{LONG_MIN};
 };
 
 }  // namespace nasactl

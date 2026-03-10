@@ -74,7 +74,9 @@ DecodeResult Packet::decode(const std::vector<uint8_t> &data) {
   offset++;
 
   messages.clear();
-  for (uint8_t i = 0; i < msg_count && offset < crc_offset; i++) {
+  for (uint8_t i = 0; i < msg_count; i++) {
+    if (offset >= crc_offset)
+      return DecodeResult::InvalidSize;
     MessageSet ms;
     if (!ms.decode(data, offset))
       return DecodeResult::InvalidSize;

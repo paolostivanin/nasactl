@@ -6,11 +6,11 @@ namespace nasactl {
 static const char *const TAG = "nasactl.climate";
 
 // Samsung NASA mode values
-static const long NASA_MODE_COOL = 0;
-static const long NASA_MODE_DRY = 1;
-static const long NASA_MODE_FAN = 2;
-static const long NASA_MODE_HEAT = 3;
-static const long NASA_MODE_AUTO = 4;
+static const long NASA_MODE_AUTO = 0;
+static const long NASA_MODE_COOL = 1;
+static const long NASA_MODE_DRY = 2;
+static const long NASA_MODE_FAN = 3;
+static const long NASA_MODE_HEAT = 4;
 
 // Samsung NASA fan mode values
 static const long NASA_FAN_AUTO = 0;
@@ -120,13 +120,15 @@ void NasactlClimate::control(const esphome::climate::ClimateCall &call) {
     }
     controller_->write(addr, 0x4006, nasa_fan);
     this->set_fan_mode_(fan);
+    this->custom_fan_mode.reset();  // clear custom when setting standard
   }
 
   if (call.has_custom_fan_mode()) {
     auto custom = call.get_custom_fan_mode();
-    if (custom == CUSTOM_FAN_TURBO) {
+    if (custom.has_value() && *custom == CUSTOM_FAN_TURBO) {
       controller_->write(addr, 0x4006, NASA_FAN_TURBO);
       this->set_custom_fan_mode_(CUSTOM_FAN_TURBO);
+      this->fan_mode.reset();  // clear standard when setting custom
     }
   }
 
@@ -182,22 +184,20 @@ void NasactlClimate::update_current_temp(float temp) {
 }
 
 void NasactlClimate::update_fan_mode(long value) {
-  switch (value) {
-    case NASA_FAN_AUTO:
-      this->set_fan_mode_(esphome::climate::CLIMATE_FAN_AUTO);
-      break;
-    case NASA_FAN_LOW:
-      this->set_fan_mode_(esphome::climate::CLIMATE_FAN_LOW);
-      break;
-    case NASA_FAN_MID:
-      this->set_fan_mode_(esphome::climate::CLIMATE_FAN_MEDIUM);
-      break;
-    case NASA_FAN_HIGH:
-      this->set_fan_mode_(esphome::climate::CLIMATE_FAN_HIGH);
-      break;
-    case NASA_FAN_TURBO:
-      this->set_custom_fan_mode_(CUSTOM_FAN_TURBO);
-      break;
+  if (value == NASA_FAN_TURBO) {
+    this->set_custom_fan_mode_(CUSTOM_FAN_TURBO);
+    this->fan_mode.reset();
+  } else {
+    esphome::climate::ClimateFanMode fm;
+    switch (value) {
+      case NASA_FAN_AUTO: fm = esphome::climate::CLIMATE_FAN_AUTO; break;
+      case NASA_FAN_LOW: fm = esphome::climate::CLIMATE_FAN_LOW; break;
+      case NASA_FAN_MID: fm = esphome::climate::CLIMATE_FAN_MEDIUM; break;
+      case NASA_FAN_HIGH: fm = esphome::climate::CLIMATE_FAN_HIGH; break;
+      default: fm = esphome::climate::CLIMATE_FAN_AUTO; break;
+    }
+    this->set_fan_mode_(fm);
+    this->custom_fan_mode.reset();
   }
   this->publish_state();
 }

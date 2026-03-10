@@ -30,11 +30,3 @@ NasactlTextSensor = nasactl_ns.class_(
     "NasactlTextSensor", cg.esphome_ns.class_("text_sensor::TextSensor"))
 NasactlClimate = nasactl_ns.class_(
     "NasactlClimate", cg.esphome_ns.class_("climate::Climate"), cg.Component)
-ClimateMessageRouter = nasactl_ns.class_("ClimateMessageRouter")
-
-# Climate router field constants (uint8_t, not enum)
-CLIMATE_FIELD_POWER = 0
-CLIMATE_FIELD_MODE = 1
-CLIMATE_FIELD_TARGET_TEMP = 2
-CLIMATE_FIELD_CURRENT_TEMP = 3
-CLIMATE_FIELD_FAN_MODE = 4

@@ -35,7 +35,9 @@ struct Command {
 
   static uint8_t next_packet_number() {
     static uint8_t counter = 0;
-    return counter++;
+    counter++;
+    if (counter == 0) counter = 1;  // skip 0 — reserved for fire-and-forget
+    return counter;
   }
 
   bool decode(const std::vector<uint8_t> &data, uint32_t &offset) {

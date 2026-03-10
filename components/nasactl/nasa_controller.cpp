@@ -32,6 +32,8 @@ void NasaController::setup() {
     }
   }
 
+  fsv_setup_time_ = millis();
+
   if (!fsv_codes_.empty()) {
     ESP_LOGI(TAG, "Registered %zu FSV codes for auto-polling", fsv_codes_.size());
   }
@@ -80,7 +82,7 @@ void NasaController::write(const std::string &address, uint16_t message_number, 
 }
 
 void NasaController::read(const std::vector<uint16_t> &message_numbers) {
-  client_->send_read(Address::broadcast(), message_numbers);
+  client_->send_read(message_numbers);
 }
 
 void NasaController::read(uint16_t message_number) {
@@ -128,8 +130,8 @@ void NasaController::fsv_poll_() {
 
   uint32_t now = millis();
 
-  // Wait for startup delay
-  if (!fsv_initial_poll_done_ && now < fsv_startup_delay_)
+  // Wait for startup delay (uses subtraction for millis() wraparound safety)
+  if (!fsv_initial_poll_done_ && (now - fsv_setup_time_) < fsv_startup_delay_)
     return;
 
   // Start initial poll
