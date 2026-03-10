@@ -120,15 +120,14 @@ void NasactlClimate::control(const esphome::climate::ClimateCall &call) {
     }
     controller_->write(addr, 0x4006, nasa_fan);
     this->set_fan_mode_(fan);
-    this->custom_fan_mode.reset();  // clear custom when setting standard
+    this->clear_custom_fan_mode_();
   }
 
   if (call.has_custom_fan_mode()) {
-    auto custom = call.get_custom_fan_mode();
-    if (custom.has_value() && *custom == CUSTOM_FAN_TURBO) {
+    if (call.get_custom_fan_mode() == CUSTOM_FAN_TURBO) {
       controller_->write(addr, 0x4006, NASA_FAN_TURBO);
+      this->clear_custom_fan_mode_();
       this->set_custom_fan_mode_(CUSTOM_FAN_TURBO);
-      this->fan_mode.reset();  // clear standard when setting custom
     }
   }
 
@@ -185,8 +184,8 @@ void NasactlClimate::update_current_temp(float temp) {
 
 void NasactlClimate::update_fan_mode(long value) {
   if (value == NASA_FAN_TURBO) {
+    this->clear_custom_fan_mode_();
     this->set_custom_fan_mode_(CUSTOM_FAN_TURBO);
-    this->fan_mode.reset();
   } else {
     esphome::climate::ClimateFanMode fm;
     switch (value) {
@@ -197,7 +196,7 @@ void NasactlClimate::update_fan_mode(long value) {
       default: fm = esphome::climate::CLIMATE_FAN_AUTO; break;
     }
     this->set_fan_mode_(fm);
-    this->custom_fan_mode.reset();
+    this->clear_custom_fan_mode_();
   }
   this->publish_state();
 }
