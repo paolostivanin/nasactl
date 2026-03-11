@@ -94,13 +94,27 @@ inline const char *address_class_to_string(AddressClass klass) {
     case AddressClass::HTU: return "HTU";
     case AddressClass::Indoor: return "Indoor";
     case AddressClass::ERV: return "ERV";
+    case AddressClass::Diffuser: return "Diffuser";
     case AddressClass::MCU: return "MCU";
     case AddressClass::RMC: return "RMC";
     case AddressClass::WiredRemote: return "Wired Remote";
+    case AddressClass::PIM: return "PIM";
+    case AddressClass::SIM: return "SIM";
+    case AddressClass::Peak: return "Peak";
+    case AddressClass::PowerDivider: return "Power Divider";
+    case AddressClass::OnOffController: return "On/Off Controller";
     case AddressClass::WiFiKit: return "WiFi Kit";
     case AddressClass::CentralController: return "Central Controller";
     case AddressClass::DMS: return "DMS";
     case AddressClass::JigTester: return "Jig Tester";
+    case AddressClass::BroadcastSelfLayer: return "Broadcast Self";
+    case AddressClass::BroadcastControlLayer: return "Broadcast Control";
+    case AddressClass::BroadcastSetLayer: return "Broadcast Set";
+    case AddressClass::BroadcastControlAndSetLayer: return "Broadcast Control+Set";
+    case AddressClass::BroadcastModuleLayer: return "Broadcast Module";
+    case AddressClass::BroadcastCSM: return "Broadcast CSM";
+    case AddressClass::BroadcastLocalLayer: return "Broadcast Local";
+    case AddressClass::BroadcastCSML: return "Broadcast CSML";
     default: return "Unknown";
   }
 }
