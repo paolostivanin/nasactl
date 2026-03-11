@@ -1,0 +1,400 @@
+views:
+  - type: sections
+    title: Samsung HVAC
+    path: samsung-hvac
+    sections:
+      # ══════════════════════════════════════════
+      # AC CLIMATE
+      # ══════════════════════════════════════════
+      - type: grid
+        cards:
+          - type: thermostat
+            entity: climate.samsung_nasa_bridge_ac_lp_bedroom
+            features:
+              - type: climate-hvac-modes
+                hvac_modes:
+                  - heat_cool
+                  - cool
+                  - heat
+                  - dry
+                  - fan_only
+                  - "off"
+              - type: climate-fan-modes
+                fan_modes:
+                  - auto
+                  - low
+                  - medium
+                  - high
+                  - Turbo
+          - type: thermostat
+            entity: climate.samsung_nasa_bridge_ac_offices
+            features:
+              - type: climate-hvac-modes
+                hvac_modes:
+                  - heat_cool
+                  - cool
+                  - heat
+                  - dry
+                  - fan_only
+                  - "off"
+              - type: climate-fan-modes
+                fan_modes:
+                  - auto
+                  - low
+                  - medium
+                  - high
+                  - Turbo
+          - type: thermostat
+            entity: climate.samsung_nasa_bridge_ac_kids_bedroom
+            features:
+              - type: climate-hvac-modes
+                hvac_modes:
+                  - heat_cool
+                  - cool
+                  - heat
+                  - dry
+                  - fan_only
+                  - "off"
+              - type: climate-fan-modes
+                fan_modes:
+                  - auto
+                  - low
+                  - medium
+                  - high
+                  - Turbo
+          - type: thermostat
+            entity: climate.samsung_nasa_bridge_ac_living_room
+            features:
+              - type: climate-hvac-modes
+                hvac_modes:
+                  - heat_cool
+                  - cool
+                  - heat
+                  - dry
+                  - fan_only
+                  - "off"
+              - type: climate-fan-modes
+                fan_modes:
+                  - auto
+                  - low
+                  - medium
+                  - high
+                  - Turbo
+
+      # ── AC Diagnostics ─────────────────────
+      - type: grid
+        cards:
+          - type: custom:vertical-stack-in-card
+            cards:
+              - type: custom:mushroom-title-card
+                title: AC Diagnostics
+              - type: entities
+                entities:
+                  - type: custom:multiple-entity-row
+                    entity: sensor.samsung_nasa_bridge_lp_bedroom_eva_in
+                    name: LP Bedroom EVA
+                    icon: mdi:heating-coil
+                    state_header: In
+                    format: precision1
+                    entities:
+                      - entity: sensor.samsung_nasa_bridge_lp_bedroom_eva_out
+                        name: Out
+                        format: precision1
+                  - type: custom:multiple-entity-row
+                    entity: sensor.samsung_nasa_bridge_offices_eva_in
+                    name: Offices EVA
+                    icon: mdi:heating-coil
+                    state_header: In
+                    format: precision1
+                    entities:
+                      - entity: sensor.samsung_nasa_bridge_offices_eva_out
+                        name: Out
+                        format: precision1
+                  - type: custom:multiple-entity-row
+                    entity: sensor.samsung_nasa_bridge_kids_bedroom_eva_in
+                    name: Kids Bedroom EVA
+                    icon: mdi:heating-coil
+                    state_header: In
+                    format: precision1
+                    entities:
+                      - entity: sensor.samsung_nasa_bridge_kids_bedroom_eva_out
+                        name: Out
+                        format: precision1
+                  - type: custom:multiple-entity-row
+                    entity: sensor.samsung_nasa_bridge_living_room_eva_in
+                    name: Living Room EVA
+                    icon: mdi:heating-coil
+                    state_header: In
+                    format: precision1
+                    entities:
+                      - entity: sensor.samsung_nasa_bridge_living_room_eva_out
+                        name: Out
+                        format: precision1
+
+      # ══════════════════════════════════════════
+      # DHW + WATER CIRCUIT
+      # ══════════════════════════════════════════
+      - type: grid
+        cards:
+          - type: custom:vertical-stack-in-card
+            cards:
+              - type: custom:mushroom-title-card
+                title: Domestic Hot Water
+              - type: entities
+                entities:
+                  - entity: switch.samsung_nasa_bridge_dhw_enabled
+                    name: DHW Enabled
+                  - entity: select.samsung_nasa_bridge_dhw_mode
+                    name: DHW Mode
+                  - entity: number.samsung_nasa_bridge_dhw_target_temperature
+                    name: Target Temperature
+                  - entity: sensor.samsung_nasa_bridge_dhw_temperature
+                    name: Current Temperature
+                  - entity: text_sensor.samsung_nasa_bridge_3_way_valve_direction
+                    name: 3-Way Valve
+                  - entity: sensor.samsung_nasa_bridge_water_law_target_flow_temp
+                    name: Water Law Target
+                  - entity: number.samsung_nasa_bridge_water_law_target_temp_shift
+                    name: Water Law Shift
+                  - entity: switch.samsung_nasa_bridge_silence_mode
+                    name: Silence Mode
+
+          - type: custom:vertical-stack-in-card
+            cards:
+              - type: custom:mushroom-title-card
+                title: Water Circuit
+              - type: entities
+                entities:
+                  - type: custom:multiple-entity-row
+                    entity: sensor.samsung_nasa_bridge_eva_in_temp
+                    name: Evaporator
+                    icon: mdi:heating-coil
+                    state_header: In
+                    format: precision1
+                    entities:
+                      - entity: sensor.samsung_nasa_bridge_eva_out_temp
+                        name: Out
+                        format: precision1
+                  - type: custom:multiple-entity-row
+                    entity: sensor.samsung_nasa_bridge_phe_in_water_return
+                    name: Water Temp
+                    icon: mdi:water-thermometer
+                    state_header: Return
+                    format: precision1
+                    entities:
+                      - entity: sensor.samsung_nasa_bridge_phe_out_water_out
+                        name: Out
+                        format: precision1
+                  - entity: sensor.samsung_nasa_bridge_water_flow
+                    name: Water Flow Rate
+                    icon: mdi:water-pump
+              - type: custom:mushroom-title-card
+                title: System Status
+              - type: entities
+                entities:
+                  - entity: binary_sensor.samsung_nasa_bridge_defrost_status
+                    name: Defrost
+                    icon: mdi:snowflake-melt
+                  - entity: binary_sensor.samsung_nasa_bridge_water_pump_status
+                    name: Water Pump
+                    icon: mdi:pump
+                  - entity: binary_sensor.samsung_nasa_bridge_booster_heater_status
+                    name: Booster Heater
+                    icon: mdi:radiator
+
+      # ══════════════════════════════════════════
+      # OUTDOOR UNIT + ENERGY
+      # ══════════════════════════════════════════
+      - type: grid
+        cards:
+          - type: custom:vertical-stack-in-card
+            cards:
+              - type: custom:mushroom-title-card
+                title: Outdoor Unit
+              - type: entities
+                entities:
+                  - entity: sensor.samsung_nasa_bridge_outdoor_temperature
+                    name: Outdoor Temp
+                    icon: mdi:thermometer
+                  - type: custom:multiple-entity-row
+                    entity: sensor.samsung_nasa_bridge_compressor_frequency
+                    name: Motors
+                    icon: mdi:fan-auto
+                    state_header: Compressor
+                    format: precision0
+                    entities:
+                      - entity: sensor.samsung_nasa_bridge_outdoor_fan_speed
+                        name: Fan
+                        format: precision0
+                  - type: custom:multiple-entity-row
+                    entity: sensor.samsung_nasa_bridge_hp_voltage
+                    name: Electrical
+                    icon: mdi:flash
+                    state_header: Voltage
+                    format: precision1
+                    entities:
+                      - entity: sensor.samsung_nasa_bridge_hp_current
+                        name: Current
+                        format: precision2
+                  - entity: text_sensor.samsung_nasa_bridge_outdoor_driving_mode
+                    name: Driving Mode
+                    icon: mdi:engine
+                  - entity: text_sensor.samsung_nasa_bridge_outdoor_service_operation
+                    name: Service Operation
+                    icon: mdi:engine
+                  - entity: text_sensor.samsung_nasa_bridge_error_code
+                    name: Error Code
+                    icon: mdi:alert-circle
+
+          - type: custom:vertical-stack-in-card
+            cards:
+              - type: custom:mushroom-title-card
+                title: Energy
+              - type: entities
+                entities:
+                  - type: custom:multiple-entity-row
+                    entity: sensor.samsung_nasa_bridge_hp_consumed_power_last_minute
+                    name: Consumed
+                    icon: mdi:transmission-tower-import
+                    state_header: Power
+                    format: precision0
+                    entities:
+                      - entity: sensor.samsung_nasa_bridge_hp_consumed_energy_total
+                        name: Total
+                        format: precision1
+                  - type: custom:multiple-entity-row
+                    entity: sensor.samsung_nasa_bridge_hp_generated_power_last_minute
+                    name: Produced
+                    icon: mdi:heat-pump-outline
+                    state_header: Power
+                    format: precision0
+                    entities:
+                      - entity: sensor.samsung_nasa_bridge_hp_produced_energy_total
+                        name: Total
+                        format: precision1
+                  - entity: sensor.samsung_nasa_bridge_indoor_power_consumption
+                    name: Indoor Consumption
+                    icon: mdi:flash
+                  - type: custom:template-entity-row
+                    entity: sensor.samsung_nasa_bridge_hp_consumed_power_last_minute
+                    name: COP (Instantaneous)
+                    icon: mdi:sigma
+                    state: >
+                      {% set con =
+                      states('sensor.samsung_nasa_bridge_hp_consumed_power_last_minute')
+                      | float(0) %} {% set pro =
+                      states('sensor.samsung_nasa_bridge_hp_generated_power_last_minute')
+                      | float(0) %} {% if con > 50 %}{{ (pro / con) |
+                      round(2) }}{% else %}--{% endif %}
+
+      # ══════════════════════════════════════════
+      # FSV: DHW CONFIGURATION
+      # ══════════════════════════════════════════
+      - type: grid
+        cards:
+          - type: custom:vertical-stack-in-card
+            cards:
+              - type: custom:mushroom-title-card
+                title: DHW Configuration
+              - type: entities
+                entities:
+                  - entity: select.samsung_nasa_bridge_dhw_operation_mode
+                    name: Operation Mode
+                  - type: section
+                    label: Tank Limits
+                  - entity: number.samsung_nasa_bridge_dhw_tank_temp_upper_limit
+                    name: Upper Limit
+                  - entity: number.samsung_nasa_bridge_dhw_tank_temp_lower_limit
+                    name: Lower Limit
+                  - type: section
+                    label: Booster Heater
+                  - entity: switch.samsung_nasa_bridge_dhw_booster_heater
+                    name: Enabled
+                  - entity: number.samsung_nasa_bridge_dhw_booster_heater_delay
+                    name: Delay
+                  - entity: number.samsung_nasa_bridge_dhw_booster_heater_overshoot
+                    name: Overshoot
+                  - type: section
+                    label: Forced Operation
+                  - entity: switch.samsung_nasa_bridge_dhw_forced_operation_timer
+                    name: Timer Enabled
+                  - entity: number.samsung_nasa_bridge_dhw_forced_operation_time
+                    name: Duration
+
+          - type: custom:vertical-stack-in-card
+            cards:
+              - type: custom:mushroom-title-card
+                title: DHW Disinfection
+              - type: entities
+                entities:
+                  - entity: switch.samsung_nasa_bridge_dhw_disinfection
+                    name: Enabled
+                  - entity: select.samsung_nasa_bridge_dhw_disinfection_day
+                    name: Day
+                  - entity: number.samsung_nasa_bridge_dhw_disinfection_start_time
+                    name: Start Time
+                  - entity: number.samsung_nasa_bridge_dhw_disinfection_target_temp
+                    name: Target Temperature
+                  - entity: number.samsung_nasa_bridge_dhw_disinfection_duration
+                    name: Duration
+                  - entity: number.samsung_nasa_bridge_dhw_disinfection_max_time
+                    name: Max Time
+
+      # ══════════════════════════════════════════
+      # FSV: HEATING CONFIGURATION
+      # ══════════════════════════════════════════
+      - type: grid
+        cards:
+          - type: custom:vertical-stack-in-card
+            cards:
+              - type: custom:mushroom-title-card
+                title: Water Law Curve
+              - type: entities
+                entities:
+                  - type: section
+                    label: Outdoor Temperature Range
+                  - entity: number.samsung_nasa_bridge_heating_lower_outdoor_temp
+                    name: Lower Outdoor Temp
+                  - entity: number.samsung_nasa_bridge_heating_upper_outdoor_temp
+                    name: Upper Outdoor Temp
+                  - type: section
+                    label: Water Temperature at Outdoor
+                  - entity: number.samsung_nasa_bridge_heating_water_temp_at_cold_outdoor
+                    name: At Cold Outdoor
+                  - entity: number.samsung_nasa_bridge_heating_water_temp_at_warm_outdoor
+                    name: At Warm Outdoor
+                  - type: section
+                    label: Water Outlet Limits
+                  - entity: number.samsung_nasa_bridge_heating_water_outlet_upper_limit
+                    name: Upper Limit
+                  - entity: number.samsung_nasa_bridge_heating_water_outlet_lower_limit
+                    name: Lower Limit
+
+          - type: custom:vertical-stack-in-card
+            cards:
+              - type: custom:mushroom-title-card
+                title: HP Tank & Priority
+              - type: entities
+                entities:
+                  - type: section
+                    label: Heat Pump Tank Control
+                  - entity: number.samsung_nasa_bridge_hp_max_temp_alone
+                    name: Max Temp (HP Alone)
+                  - entity: number.samsung_nasa_bridge_hp_temp_diff_for_off
+                    name: Temp Diff for OFF
+                  - entity: number.samsung_nasa_bridge_hp_temp_diff_for_on
+                    name: Temp Diff for ON
+                  - type: section
+                    label: Heating / DHW Priority
+                  - entity: select.samsung_nasa_bridge_heating_dhw_priority
+                    name: Priority
+                  - entity: number.samsung_nasa_bridge_heating_priority_changeover_temp
+                    name: Changeover Temp
+                  - entity: number.samsung_nasa_bridge_heating_dhw_off_outdoor_temp
+                    name: DHW OFF Outdoor Temp
+                  - type: section
+                    label: Inverter Pump
+                  - entity: select.samsung_nasa_bridge_heating_inverter_pump_application
+                    name: Application
+                  - entity: number.samsung_nasa_bridge_heating_inverter_pump_target_delta
+                    name: Target Delta
