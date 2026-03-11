@@ -182,23 +182,23 @@ ENTITIES = {
         "icon": "mdi:counter",
         "divisor": 1000,
     },
-    "outdoor_current": {
+    "hp_current": {
         "type": "sensor",
-        "code": 0x8233,
+        "code": 0x8217,
         "unit": "A",
         "device_class": "current",
         "state_class": "measurement",
-        "accuracy": 1,
+        "accuracy": 2,
         "icon": "mdi:current-ac",
         "divisor": 10,
     },
-    "outdoor_voltage": {
+    "hp_voltage": {
         "type": "sensor",
-        "code": 0x8234,
+        "code": 0x24FC,
         "unit": "V",
         "device_class": "voltage",
         "state_class": "measurement",
-        "accuracy": 0,
+        "accuracy": 1,
         "icon": "mdi:sine-wave",
     },
     "compressor_frequency": {
@@ -398,7 +398,6 @@ ENTITIES = {
         "device_class": "duration",
         "icon": "mdi:timer-alert",
         "divisor": 60,
-        "signed": True,
         "fsv": True,
         "entity_category": "config",
     },

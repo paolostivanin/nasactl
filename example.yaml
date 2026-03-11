@@ -240,10 +240,10 @@ nasactl:
         name: "HP Consumed Power Last Minute"
       hp_consumed_energy_total:
         name: "HP Consumed Energy Total"
-      outdoor_current:
-        name: "Outdoor Current"
-      outdoor_voltage:
-        name: "Outdoor Voltage"
+      hp_current:
+        name: "HP Current"
+      hp_voltage:
+        name: "HP Voltage"
       outdoor_temperature:
         name: "Outdoor Temperature"
       compressor_frequency:

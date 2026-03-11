@@ -17,16 +17,21 @@ enum class AddressClass : uint8_t {
   WiredRemote = 0x50,
   PIM = 0x58,
   SIM = 0x59,
+  Peak = 0x5A,
+  PowerDivider = 0x5B,
+  OnOffController = 0x60,
   WiFiKit = 0x62,
-  DMS = 0x65,
-  JigTester = 0xB0,
-  BroadcastSelfLayer = 0xB1,
-  BroadcastControlLayer = 0xB2,
-  BroadcastSetLayer = 0xB3,
-  BroadcastCSLayer = 0xB4,
-  BroadcastControlCSLayer = 0xB5,
-  BroadcastModuleLayer = 0xB8,
-  BroadcastLocalLayer = 0xBF,
+  CentralController = 0x65,
+  DMS = 0x6A,
+  JigTester = 0x80,
+  BroadcastSelfLayer = 0xB0,
+  BroadcastControlLayer = 0xB1,
+  BroadcastSetLayer = 0xB2,
+  BroadcastControlAndSetLayer = 0xB3,
+  BroadcastModuleLayer = 0xB4,
+  BroadcastCSM = 0xB7,
+  BroadcastLocalLayer = 0xB8,
+  BroadcastCSML = 0xBF,
 };
 
 struct Address {
@@ -89,7 +94,12 @@ inline const char *address_class_to_string(AddressClass klass) {
     case AddressClass::HTU: return "HTU";
     case AddressClass::Indoor: return "Indoor";
     case AddressClass::ERV: return "ERV";
+    case AddressClass::MCU: return "MCU";
+    case AddressClass::RMC: return "RMC";
+    case AddressClass::WiredRemote: return "Wired Remote";
     case AddressClass::WiFiKit: return "WiFi Kit";
+    case AddressClass::CentralController: return "Central Controller";
+    case AddressClass::DMS: return "DMS";
     case AddressClass::JigTester: return "Jig Tester";
     default: return "Unknown";
   }

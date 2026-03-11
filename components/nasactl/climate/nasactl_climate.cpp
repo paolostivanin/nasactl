@@ -149,27 +149,31 @@ void NasactlClimate::update_power(bool on) {
 }
 
 void NasactlClimate::update_mode(long value) {
+  esphome::climate::ClimateMode new_mode;
   switch (value) {
     case NASA_MODE_COOL:
-      this->mode = esphome::climate::CLIMATE_MODE_COOL;
+      new_mode = esphome::climate::CLIMATE_MODE_COOL;
       break;
     case NASA_MODE_DRY:
-      this->mode = esphome::climate::CLIMATE_MODE_DRY;
+      new_mode = esphome::climate::CLIMATE_MODE_DRY;
       break;
     case NASA_MODE_FAN:
-      this->mode = esphome::climate::CLIMATE_MODE_FAN_ONLY;
+      new_mode = esphome::climate::CLIMATE_MODE_FAN_ONLY;
       break;
     case NASA_MODE_HEAT:
-      this->mode = esphome::climate::CLIMATE_MODE_HEAT;
+      new_mode = esphome::climate::CLIMATE_MODE_HEAT;
       break;
     case NASA_MODE_AUTO:
-      this->mode = esphome::climate::CLIMATE_MODE_HEAT_COOL;
+      new_mode = esphome::climate::CLIMATE_MODE_HEAT_COOL;
       break;
     default:
       return;
   }
-  last_active_mode_ = this->mode;
-  this->publish_state();
+  last_active_mode_ = new_mode;
+  if (this->mode != esphome::climate::CLIMATE_MODE_OFF) {
+    this->mode = new_mode;
+    this->publish_state();
+  }
 }
 
 void NasactlClimate::update_target_temp(float temp) {
