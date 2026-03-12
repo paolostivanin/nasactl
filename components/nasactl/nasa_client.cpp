@@ -55,8 +55,12 @@ void NasaClient::read_data_() {
         auto result = pkt.decode(rx_buffer_);
 
         if (result == DecodeResult::Ok) {
-          // Handle ACKs — remove from retry queue
-          if (pkt.command.data_type == DataType::Ack) {
+          // Handle ACKs and NACKs — remove from retry queue
+          if (pkt.command.data_type == DataType::Ack ||
+              pkt.command.data_type == DataType::Nack) {
+            if (pkt.command.data_type == DataType::Nack) {
+              ESP_LOGW(TAG, "NACK received for packet id=%d", pkt.command.packet_number);
+            }
             ack_packet(pkt.command.packet_number);
           }
 
@@ -64,12 +68,16 @@ void NasaClient::read_data_() {
           if (on_packet_) {
             on_packet_(pkt);
           }
+
+          // Remove only the consumed bytes, preserving any trailing data
+          // from the next packet that may have already arrived.
+          rx_buffer_.erase(rx_buffer_.begin(),
+                           rx_buffer_.begin() + expected_frame_len);
         } else {
           ESP_LOGW(TAG, "Packet decode failed (result=%d), discarding %zu bytes",
                    static_cast<int>(result), rx_buffer_.size());
+          rx_buffer_.clear();
         }
-
-        rx_buffer_.clear();
       }
     }
 

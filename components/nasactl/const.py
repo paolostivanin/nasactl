@@ -188,7 +188,7 @@ ENTITIES = {
         "unit": "A",
         "device_class": "current",
         "state_class": "measurement",
-        "accuracy": 2,
+        "accuracy": 1,
         "icon": "mdi:current-ac",
         "divisor": 10,
     },

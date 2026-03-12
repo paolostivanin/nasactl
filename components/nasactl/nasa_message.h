@@ -46,10 +46,11 @@ struct MessageSet {
       case MessageSetType::LongVariable:
         if (offset + 4 > data.size())
           return false;
-        value = (static_cast<long>(data[offset]) << 24) |
-                (static_cast<long>(data[offset + 1]) << 16) |
-                (static_cast<long>(data[offset + 2]) << 8) |
-                static_cast<long>(data[offset + 3]);
+        value = static_cast<long>(
+            (static_cast<uint32_t>(data[offset]) << 24) |
+            (static_cast<uint32_t>(data[offset + 1]) << 16) |
+            (static_cast<uint32_t>(data[offset + 2]) << 8) |
+            static_cast<uint32_t>(data[offset + 3]));
         offset += 4;
         break;
       case MessageSetType::Structure: {

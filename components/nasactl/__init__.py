@@ -190,11 +190,38 @@ def _validate_address(value):
     return value
 
 
+def _is_outdoor_code(code):
+    """Outdoor message codes have the high bit of byte 0 set (0x8xxx)."""
+    return (code & 0x8000) != 0
+
+
+def _is_indoor_code(code):
+    """Indoor message codes do NOT have the high bit set, excluding
+    special codes like 0x24FC that are used by both indoor and outdoor."""
+    if code == 0x24FC:  # LVAR_NM_OUT_SENSOR_VOLTAGE — used by outdoor units
+        return False
+    return (code & 0x8000) == 0
+
+
 def _validate_device(config):
     if CONF_CLIMATE in config and config[CONF_DEVICE_TYPE] != "ac":
         raise cv.Invalid(
             "'climate' is only supported for 'ac' device type, "
             f"but device type is '{config[CONF_DEVICE_TYPE]}'")
+
+    dev_type = config[CONF_DEVICE_TYPE]
+    for key, edef in ENTITIES.items():
+        if key not in config:
+            continue
+        code = edef["code"]
+        if dev_type == "outdoor" and _is_indoor_code(code):
+            raise cv.Invalid(
+                f"Entity '{key}' (code 0x{code:04X}) is an indoor message "
+                f"and cannot be used on an 'outdoor' device")
+        if dev_type in ("hydro", "ac") and _is_outdoor_code(code):
+            raise cv.Invalid(
+                f"Entity '{key}' (code 0x{code:04X}) is an outdoor message "
+                f"and cannot be used on a '{dev_type}' device")
     return config
 
 

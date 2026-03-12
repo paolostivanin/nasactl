@@ -1,3 +1,9 @@
+# Required HACS custom cards (install via HACS > Frontend):
+#   - vertical-stack-in-card  (https://github.com/ofekashery/vertical-stack-in-card)
+#   - mushroom               (https://github.com/piitaya/lovelace-mushroom)
+#   - multiple-entity-row    (https://github.com/benct/lovelace-multiple-entity-row)
+#   - template-entity-row    (https://github.com/thomasloven/lovelace-template-entity-row)
+
 views:
   - type: sections
     title: Samsung HVAC

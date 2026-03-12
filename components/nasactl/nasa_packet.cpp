@@ -44,8 +44,8 @@ DecodeResult Packet::decode(const std::vector<uint8_t> &data) {
   if (size > PACKET_MAX_SIZE || size + 2 > data.size())
     return DecodeResult::InvalidSize;
 
-  // Total frame = start(1) + size(2) + payload(size-2) + crc(2) + end(1)
-  // data length should be: size + 3 (start + size_hi + size_lo + ... + end)
+  // Frame layout: start(1) + [size_hi, size_lo, payload, crc_hi, crc_lo](=size bytes) + end(1)
+  // Total frame length = size + 2, end marker is at index size + 1
   uint32_t frame_end = size + 1;  // index of end marker
   if (frame_end >= data.size())
     return DecodeResult::InvalidSize;
