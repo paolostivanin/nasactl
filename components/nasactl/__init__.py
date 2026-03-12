@@ -191,16 +191,15 @@ def _validate_address(value):
 
 
 def _is_outdoor_code(code):
-    """Outdoor message codes have the high bit of byte 0 set (0x8xxx)."""
-    return (code & 0x8000) != 0
+    """Outdoor message codes are in the 0x8000-0x8FFF range."""
+    return (code & 0xF000) == 0x8000
 
 
 def _is_indoor_code(code):
-    """Indoor message codes do NOT have the high bit set, excluding
-    special codes like 0x24FC that are used by both indoor and outdoor."""
-    if code == 0x24FC:  # LVAR_NM_OUT_SENSOR_VOLTAGE — used by outdoor units
-        return False
-    return (code & 0x8000) == 0
+    """Indoor message codes are in the 0x4000-0x4FFF range.
+    Codes in other ranges (0x0xxx, 0x2xxx) are system/network codes
+    that can be used on any device type."""
+    return (code & 0xF000) == 0x4000
 
 
 def _validate_device(config):

@@ -99,6 +99,8 @@ Each device requires an `address` (format `XX.XX.XX`) and a `type`:
 | `ac` | Air conditioning indoor unit | Yes (with modes + fan speeds) |
 | `outdoor` | Outdoor unit | No (sensors only) |
 
+Entity-to-device-type compatibility is validated at compile time: indoor entities (`0x4xxx` codes) cannot be used on `outdoor` devices, and outdoor entities (`0x8xxx` codes) cannot be used on `hydro`/`ac` devices. System codes (`0x0xxx`/`0x2xxx`) are allowed on any device type.
+
 ### Climate Entity (AC only)
 
 AC devices support a climate entity with modes (Cool, Heat, Dry, Fan Only, Auto) and fan speeds (Auto, Low, Medium, High, Turbo).
