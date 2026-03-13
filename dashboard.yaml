@@ -5,9 +5,13 @@
 #   - template-entity-row    (https://github.com/thomasloven/lovelace-template-entity-row)
 
 views:
+  # ══════════════════════════════════════════════
+  # VIEW 1: AIR CONDITIONING
+  # ══════════════════════════════════════════════
   - type: sections
-    title: Samsung HVAC
-    path: samsung-hvac
+    title: Air Conditioning
+    path: air-conditioning
+    icon: mdi:air-conditioner
     sections:
       # ══════════════════════════════════════════
       # AC CLIMATE
@@ -137,6 +141,14 @@ views:
                         name: Out
                         format: precision1
 
+  # ══════════════════════════════════════════════
+  # VIEW 2: DHW / HEATING / OUTDOOR
+  # ══════════════════════════════════════════════
+  - type: sections
+    title: DHW & Heating
+    path: dhw-heating
+    icon: mdi:heat-pump-outline
+    sections:
       # ══════════════════════════════════════════
       # DHW + WATER CIRCUIT
       # ══════════════════════════════════════════
