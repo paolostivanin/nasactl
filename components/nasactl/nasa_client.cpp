@@ -76,15 +76,6 @@ void NasaClient::read_data_() {
         } else {
           ESP_LOGW(TAG, "Packet decode failed (result=%d), discarding %zu bytes",
                    static_cast<int>(result), rx_buffer_.size());
-          // Hex dump for debugging failed packets
-          std::string hex;
-          hex.reserve(rx_buffer_.size() * 3);
-          for (size_t i = 0; i < rx_buffer_.size(); i++) {
-            char tmp[4];
-            snprintf(tmp, sizeof(tmp), "%02X ", rx_buffer_[i]);
-            hex += tmp;
-          }
-          ESP_LOGW(TAG, "Raw: %s", hex.c_str());
           rx_buffer_.clear();
         }
       }
