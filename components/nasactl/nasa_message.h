@@ -23,7 +23,7 @@ struct MessageSet {
     type = static_cast<MessageSetType>((msg_num >> 9) & 0x03);
   }
 
-  bool decode(const std::vector<uint8_t> &data, uint32_t &offset) {
+  bool decode(const std::vector<uint8_t> &data, uint32_t &offset, uint32_t payload_end = 0) {
     if (offset + 2 > data.size())
       return false;
     message_number = (static_cast<uint16_t>(data[offset]) << 8) | data[offset + 1];
@@ -54,15 +54,14 @@ struct MessageSet {
         offset += 4;
         break;
       case MessageSetType::Structure: {
-        if (offset + 1 > data.size())
+        // Structure messages have no length prefix — they consume all
+        // remaining payload bytes.  The caller must pass the payload
+        // boundary (crc_offset) via payload_end so we know where to stop.
+        if (payload_end == 0 || offset > payload_end)
           return false;
-        uint8_t len = data[offset];
-        offset += 1;
-        if (offset + len > data.size())
-          return false;
-        // For structures, store the first 4 bytes as value for simple access
+        uint32_t len = payload_end - offset;
         value = 0;
-        for (uint8_t i = 0; i < len && i < 4; i++) {
+        for (uint32_t i = 0; i < len && i < 4; i++) {
           value = (value << 8) | data[offset + i];
         }
         offset += len;
