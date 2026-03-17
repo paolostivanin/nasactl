@@ -53,10 +53,10 @@ DecodeResult Packet::decode(const std::vector<uint8_t> &data) {
   if (data[frame_end] != PACKET_END)
     return DecodeResult::InvalidEnd;
 
-  // Verify CRC (covers bytes from index 1 to frame_end-2, CRC is at frame_end-2..frame_end-1)
+  // Verify CRC (covers payload bytes from index 3 to frame_end-3, excludes start/size/crc/end)
   uint16_t crc_offset = frame_end - 2;
   uint16_t received_crc = (static_cast<uint16_t>(data[crc_offset]) << 8) | data[crc_offset + 1];
-  uint16_t computed_crc = crc16(data, 1, crc_offset - 1);
+  uint16_t computed_crc = crc16(data, 3, crc_offset - 3);
   if (received_crc != computed_crc)
     return DecodeResult::InvalidCRC;
 
@@ -120,8 +120,8 @@ std::vector<uint8_t> Packet::encode() const {
 
   frame.insert(frame.end(), payload.begin(), payload.end());
 
-  // CRC over everything from index 1 (size fields + payload)
-  uint16_t crc = crc16(frame, 1, frame.size() - 1);
+  // CRC over payload only (index 3 onward, excluding start byte and size field)
+  uint16_t crc = crc16(frame, 3, frame.size() - 3);
   frame.push_back(static_cast<uint8_t>(crc >> 8));
   frame.push_back(static_cast<uint8_t>(crc & 0xFF));
 
