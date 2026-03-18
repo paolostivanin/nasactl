@@ -1,17 +1,7 @@
-# Home Assistant package for Samsung NASA heat pump energy tracking.
+# Home Assistant package for Samsung NASA heat pump energy tracking v1.1.0
 #
 # Splits aggregate power/energy readings by valve direction (Room vs Tank)
 # to provide separate Heating and DHW metrics.
-#
-# Prerequisites:
-#   - sensor.samsung_nasa_bridge_3_way_valve_direction  (text sensor, "Room" or "Tank")
-#   - sensor.samsung_nasa_bridge_hp_consumed_power_last_minute  (W)
-#   - sensor.samsung_nasa_bridge_hp_generated_power_last_minute (W)
-#
-# Usage: add this to your HA configuration.yaml:
-#   homeassistant:
-#     packages:
-#       heatpump: !include packages/heatpump.yaml
 
 template:
   - sensor:
@@ -67,66 +57,70 @@ template:
         unique_id: samsung_nasa_heating_cop_instantaneous
         icon: mdi:sigma
         state_class: measurement
+        availability: >
+          {{ states('sensor.heating_consumed_power') | float(0) > 50 }}
         state: >
           {% set con = states('sensor.heating_consumed_power') | float(0) %}
           {% set gen = states('sensor.heating_generated_power') | float(0) %}
-          {{ (gen / con) | round(2) }}
-        availability: >
-          {{ states('sensor.heating_consumed_power') | float(0) > 50 }}
+          {{ (gen / con) | round(2) if con > 0 else 0 }}
 
       - name: "DHW COP Instantaneous"
         unique_id: samsung_nasa_dhw_cop_instantaneous
         icon: mdi:sigma
         state_class: measurement
+        availability: >
+          {{ states('sensor.dhw_consumed_power') | float(0) > 50 }}
         state: >
           {% set con = states('sensor.dhw_consumed_power') | float(0) %}
           {% set gen = states('sensor.dhw_generated_power') | float(0) %}
-          {{ (gen / con) | round(2) }}
-        availability: >
-          {{ states('sensor.dhw_consumed_power') | float(0) > 50 }}
+          {{ (gen / con) | round(2) if con > 0 else 0 }}
 
       - name: "Overall COP Instantaneous"
         unique_id: samsung_nasa_overall_cop_instantaneous
         icon: mdi:sigma
         state_class: measurement
+        availability: >
+          {{ states('sensor.samsung_nasa_bridge_hp_consumed_power_last_minute') | float(0) > 50 }}
         state: >
           {% set con = states('sensor.samsung_nasa_bridge_hp_consumed_power_last_minute') | float(0) %}
           {% set gen = states('sensor.samsung_nasa_bridge_hp_generated_power_last_minute') | float(0) %}
-          {{ (gen / con) | round(2) }}
-        availability: >
-          {{ states('sensor.samsung_nasa_bridge_hp_consumed_power_last_minute') | float(0) > 50 }}
-
-# --- Riemann sum integration: power (W) -> energy (kWh) ---
+          {{ (gen / con) | round(2) if con > 0 else 0 }}
 
 sensor:
+  # --- Riemann sum integration: power (W) -> energy (kWh) ---
+
   - platform: integration
+    source: sensor.heating_consumed_power
     name: "Heating Consumed Energy"
     unique_id: samsung_nasa_heating_consumed_energy
-    source: sensor.heating_consumed_power
     method: left
+    unit_time: h
     unit_prefix: k
     round: 3
 
   - platform: integration
+    source: sensor.heating_generated_power
     name: "Heating Generated Energy"
     unique_id: samsung_nasa_heating_generated_energy
-    source: sensor.heating_generated_power
     method: left
+    unit_time: h
     unit_prefix: k
     round: 3
 
   - platform: integration
+    source: sensor.dhw_consumed_power
     name: "DHW Consumed Energy"
     unique_id: samsung_nasa_dhw_consumed_energy
-    source: sensor.dhw_consumed_power
     method: left
+    unit_time: h
     unit_prefix: k
     round: 3
 
   - platform: integration
+    source: sensor.dhw_generated_power
     name: "DHW Generated Energy"
     unique_id: samsung_nasa_dhw_generated_energy
-    source: sensor.dhw_generated_power
     method: left
+    unit_time: h
     unit_prefix: k
     round: 3
