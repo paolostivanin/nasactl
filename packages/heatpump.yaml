@@ -1,0 +1,138 @@
+# Home Assistant package for Samsung NASA heat pump energy tracking.
+#
+# Splits aggregate power/energy readings by valve direction (Room vs Tank)
+# to provide separate Heating and DHW metrics.
+#
+# Prerequisites:
+#   - sensor.samsung_nasa_bridge_3_way_valve_direction  (text sensor, "Room" or "Tank")
+#   - sensor.samsung_nasa_bridge_hp_consumed_power_last_minute  (W)
+#   - sensor.samsung_nasa_bridge_hp_generated_power_last_minute (W)
+#
+# Usage: add this to your HA configuration.yaml:
+#   homeassistant:
+#     packages:
+#       heatpump: !include packages/heatpump.yaml
+
+template:
+  - sensor:
+      # --- Instantaneous power split by valve direction ---
+
+      - name: "Heating Consumed Power"
+        unique_id: samsung_nasa_heating_consumed_power
+        icon: mdi:transmission-tower-import
+        device_class: power
+        unit_of_measurement: "W"
+        state_class: measurement
+        state: >
+          {% set valve = states('sensor.samsung_nasa_bridge_3_way_valve_direction') %}
+          {% set power = states('sensor.samsung_nasa_bridge_hp_consumed_power_last_minute') | float(0) %}
+          {{ power if valve == 'Room' else 0 }}
+
+      - name: "Heating Generated Power"
+        unique_id: samsung_nasa_heating_generated_power
+        icon: mdi:heat-pump-outline
+        device_class: power
+        unit_of_measurement: "W"
+        state_class: measurement
+        state: >
+          {% set valve = states('sensor.samsung_nasa_bridge_3_way_valve_direction') %}
+          {% set power = states('sensor.samsung_nasa_bridge_hp_generated_power_last_minute') | float(0) %}
+          {{ power if valve == 'Room' else 0 }}
+
+      - name: "DHW Consumed Power"
+        unique_id: samsung_nasa_dhw_consumed_power
+        icon: mdi:transmission-tower-import
+        device_class: power
+        unit_of_measurement: "W"
+        state_class: measurement
+        state: >
+          {% set valve = states('sensor.samsung_nasa_bridge_3_way_valve_direction') %}
+          {% set power = states('sensor.samsung_nasa_bridge_hp_consumed_power_last_minute') | float(0) %}
+          {{ power if valve == 'Tank' else 0 }}
+
+      - name: "DHW Generated Power"
+        unique_id: samsung_nasa_dhw_generated_power
+        icon: mdi:heat-pump-outline
+        device_class: power
+        unit_of_measurement: "W"
+        state_class: measurement
+        state: >
+          {% set valve = states('sensor.samsung_nasa_bridge_3_way_valve_direction') %}
+          {% set power = states('sensor.samsung_nasa_bridge_hp_generated_power_last_minute') | float(0) %}
+          {{ power if valve == 'Tank' else 0 }}
+
+      # --- Instantaneous COP (power ratio) ---
+
+      - name: "Heating COP Instantaneous"
+        unique_id: samsung_nasa_heating_cop_instantaneous
+        icon: mdi:sigma
+        state_class: measurement
+        state: >
+          {% set con = states('sensor.heating_consumed_power') | float(0) %}
+          {% set gen = states('sensor.heating_generated_power') | float(0) %}
+          {% if con > 50 %}
+            {{ (gen / con) | round(2) }}
+          {% else %}
+            None
+          {% endif %}
+
+      - name: "DHW COP Instantaneous"
+        unique_id: samsung_nasa_dhw_cop_instantaneous
+        icon: mdi:sigma
+        state_class: measurement
+        state: >
+          {% set con = states('sensor.dhw_consumed_power') | float(0) %}
+          {% set gen = states('sensor.dhw_generated_power') | float(0) %}
+          {% if con > 50 %}
+            {{ (gen / con) | round(2) }}
+          {% else %}
+            None
+          {% endif %}
+
+      - name: "Overall COP Instantaneous"
+        unique_id: samsung_nasa_overall_cop_instantaneous
+        icon: mdi:sigma
+        state_class: measurement
+        state: >
+          {% set con = states('sensor.samsung_nasa_bridge_hp_consumed_power_last_minute') | float(0) %}
+          {% set gen = states('sensor.samsung_nasa_bridge_hp_generated_power_last_minute') | float(0) %}
+          {% if con > 50 %}
+            {{ (gen / con) | round(2) }}
+          {% else %}
+            None
+          {% endif %}
+
+# --- Riemann sum integration: power (W) -> energy (kWh) ---
+
+sensor:
+  - platform: integration
+    name: "Heating Consumed Energy"
+    unique_id: samsung_nasa_heating_consumed_energy
+    source: sensor.heating_consumed_power
+    method: left
+    unit_prefix: k
+    round: 3
+
+  - platform: integration
+    name: "Heating Generated Energy"
+    unique_id: samsung_nasa_heating_generated_energy
+    source: sensor.heating_generated_power
+    method: left
+    unit_prefix: k
+    round: 3
+
+  - platform: integration
+    name: "DHW Consumed Energy"
+    unique_id: samsung_nasa_dhw_consumed_energy
+    source: sensor.dhw_consumed_power
+    method: left
+    unit_prefix: k
+    round: 3
+
+  - platform: integration
+    name: "DHW Generated Energy"
+    unique_id: samsung_nasa_dhw_generated_energy
+    source: sensor.dhw_generated_power
+    method: left
+    unit_prefix: k
+    round: 3

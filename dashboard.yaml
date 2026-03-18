@@ -148,86 +148,6 @@ views:
           - type: custom:vertical-stack-in-card
             cards:
               - type: custom:mushroom-title-card
-                title: Outdoor Unit
-              - type: entities
-                entities:
-                  - entity: sensor.samsung_nasa_bridge_outdoor_temperature
-                    name: Outdoor Temp
-                    icon: mdi:thermometer
-                  - type: custom:multiple-entity-row
-                    entity: sensor.samsung_nasa_bridge_compressor_frequency
-                    name: Motors
-                    icon: mdi:fan-auto
-                    state_header: Compressor
-                    format: precision0
-                    entities:
-                      - entity: sensor.samsung_nasa_bridge_outdoor_fan_speed
-                        name: Fan
-                        format: precision0
-                  - type: custom:multiple-entity-row
-                    entity: sensor.samsung_nasa_bridge_hp_voltage
-                    name: Electrical
-                    icon: mdi:flash
-                    state_header: Voltage
-                    format: precision1
-                    entities:
-                      - entity: sensor.samsung_nasa_bridge_hp_current
-                        name: Current
-                        format: precision2
-                  - entity: sensor.samsung_nasa_bridge_outdoor_driving_mode
-                    name: Driving Mode
-                    icon: mdi:engine
-                  - entity: sensor.samsung_nasa_bridge_outdoor_service_operation
-                    name: Service Operation
-                    icon: mdi:engine
-                  - entity: sensor.samsung_nasa_bridge_error_code
-                    name: Error Code
-                    icon: mdi:alert-circle
-          - type: custom:vertical-stack-in-card
-            cards:
-              - type: custom:mushroom-title-card
-                title: Energy
-              - type: entities
-                entities:
-                  - type: custom:multiple-entity-row
-                    entity: sensor.samsung_nasa_bridge_hp_consumed_power_last_minute
-                    name: Consumed
-                    icon: mdi:transmission-tower-import
-                    state_header: Power
-                    format: precision0
-                    entities:
-                      - entity: sensor.samsung_nasa_bridge_hp_consumed_energy_total
-                        name: Total
-                        format: precision1
-                  - type: custom:multiple-entity-row
-                    entity: sensor.samsung_nasa_bridge_hp_generated_power_last_minute
-                    name: Produced
-                    icon: mdi:heat-pump-outline
-                    state_header: Power
-                    format: precision0
-                    entities:
-                      - entity: sensor.samsung_nasa_bridge_hp_produced_energy_total
-                        name: Total
-                        format: precision1
-                  - entity: sensor.samsung_nasa_bridge_indoor_power_consumption
-                    name: Indoor Consumption
-                    icon: mdi:flash
-                  - type: custom:template-entity-row
-                    entity: sensor.samsung_nasa_bridge_hp_consumed_power_last_minute
-                    name: COP (Instantaneous)
-                    icon: mdi:sigma
-                    state: >
-                      {% set con =
-                      states('sensor.samsung_nasa_bridge_hp_consumed_power_last_minute')
-                      | float(0) %} {% set pro =
-                      states('sensor.samsung_nasa_bridge_hp_generated_power_last_minute')
-                      | float(0) %} {% if con > 50 %}{{ (pro / con) | round(2)
-                      }}{% else %}--{% endif %}
-      - type: grid
-        cards:
-          - type: custom:vertical-stack-in-card
-            cards:
-              - type: custom:mushroom-title-card
                 title: DHW Configuration
               - type: entities
                 entities:
@@ -332,3 +252,144 @@ views:
                   - entity: >-
                       number.samsung_nasa_bridge_heating_inverter_pump_target_delta
                     name: Target Delta
+  - type: sections
+    title: Energy & Performance
+    path: energy-performance
+    icon: mdi:lightning-bolt
+    sections:
+      - type: grid
+        cards:
+          - type: custom:vertical-stack-in-card
+            cards:
+              - type: custom:mushroom-title-card
+                title: Outdoor Unit
+              - type: entities
+                entities:
+                  - entity: sensor.samsung_nasa_bridge_outdoor_temperature
+                    name: Outdoor Temp
+                    icon: mdi:thermometer
+                  - type: custom:multiple-entity-row
+                    entity: sensor.samsung_nasa_bridge_compressor_frequency
+                    name: Motors
+                    icon: mdi:fan-auto
+                    state_header: Compressor
+                    format: precision0
+                    entities:
+                      - entity: sensor.samsung_nasa_bridge_outdoor_fan_speed
+                        name: Fan
+                        format: precision0
+                  - type: custom:multiple-entity-row
+                    entity: sensor.samsung_nasa_bridge_hp_voltage
+                    name: Electrical
+                    icon: mdi:flash
+                    state_header: Voltage
+                    format: precision1
+                    entities:
+                      - entity: sensor.samsung_nasa_bridge_hp_current
+                        name: Current
+                        format: precision2
+                  - entity: sensor.samsung_nasa_bridge_outdoor_driving_mode
+                    name: Driving Mode
+                    icon: mdi:engine
+                  - entity: sensor.samsung_nasa_bridge_outdoor_service_operation
+                    name: Service Operation
+                    icon: mdi:engine
+                  - entity: sensor.samsung_nasa_bridge_error_code
+                    name: Error Code
+                    icon: mdi:alert-circle
+          - type: custom:vertical-stack-in-card
+            cards:
+              - type: custom:mushroom-title-card
+                title: Aggregate Energy
+              - type: entities
+                entities:
+                  - type: custom:multiple-entity-row
+                    entity: sensor.samsung_nasa_bridge_hp_consumed_power_last_minute
+                    name: Consumed
+                    icon: mdi:transmission-tower-import
+                    state_header: Power
+                    format: precision0
+                    entities:
+                      - entity: sensor.samsung_nasa_bridge_hp_consumed_energy_total
+                        name: Total
+                        format: precision1
+                  - type: custom:multiple-entity-row
+                    entity: sensor.samsung_nasa_bridge_hp_generated_power_last_minute
+                    name: Produced
+                    icon: mdi:heat-pump-outline
+                    state_header: Power
+                    format: precision0
+                    entities:
+                      - entity: sensor.samsung_nasa_bridge_hp_produced_energy_total
+                        name: Total
+                        format: precision1
+                  - entity: sensor.samsung_nasa_bridge_indoor_power_consumption
+                    name: Indoor Consumption
+                    icon: mdi:flash
+              - type: custom:mushroom-title-card
+                title: COP
+              - type: entities
+                entities:
+                  - entity: sensor.overall_cop_instantaneous
+                    name: Overall
+                    icon: mdi:sigma
+                  - entity: sensor.heating_cop_instantaneous
+                    name: Heating
+                    icon: mdi:sigma
+                  - entity: sensor.dhw_cop_instantaneous
+                    name: DHW
+                    icon: mdi:sigma
+      - type: grid
+        cards:
+          - type: custom:vertical-stack-in-card
+            cards:
+              - type: custom:mushroom-title-card
+                title: Heating
+              - type: entities
+                entities:
+                  - type: custom:multiple-entity-row
+                    entity: sensor.heating_consumed_power
+                    name: Consumed
+                    icon: mdi:transmission-tower-import
+                    state_header: Power
+                    format: precision0
+                    entities:
+                      - entity: sensor.heating_consumed_energy
+                        name: Energy
+                        format: precision3
+                  - type: custom:multiple-entity-row
+                    entity: sensor.heating_generated_power
+                    name: Generated
+                    icon: mdi:heat-pump-outline
+                    state_header: Power
+                    format: precision0
+                    entities:
+                      - entity: sensor.heating_generated_energy
+                        name: Energy
+                        format: precision3
+          - type: custom:vertical-stack-in-card
+            cards:
+              - type: custom:mushroom-title-card
+                title: DHW
+              - type: entities
+                entities:
+                  - type: custom:multiple-entity-row
+                    entity: sensor.dhw_consumed_power
+                    name: Consumed
+                    icon: mdi:transmission-tower-import
+                    state_header: Power
+                    format: precision0
+                    entities:
+                      - entity: sensor.dhw_consumed_energy
+                        name: Energy
+                        format: precision3
+                  - type: custom:multiple-entity-row
+                    entity: sensor.dhw_generated_power
+                    name: Generated
+                    icon: mdi:heat-pump-outline
+                    state_header: Power
+                    format: precision0
+                    entities:
+                      - entity: sensor.dhw_generated_energy
+                        name: Energy
+                        format: precision3
