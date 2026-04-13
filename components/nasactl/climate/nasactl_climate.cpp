@@ -27,6 +27,8 @@ void NasactlClimate::setup() {
   this->target_temperature = 22.0f;
   this->current_temperature = NAN;
 
+  this->set_supported_custom_fan_modes({CUSTOM_FAN_TURBO});
+
   // Register message routers with controller
   if (controller_ && device_) {
     auto make_router = [&](const char *name, uint16_t code, ControllerMode cm, uint8_t field) {
@@ -66,8 +68,6 @@ esphome::climate::ClimateTraits NasactlClimate::traits() {
       esphome::climate::CLIMATE_FAN_MEDIUM,
       esphome::climate::CLIMATE_FAN_HIGH,
   });
-  traits.set_supported_custom_fan_modes({CUSTOM_FAN_TURBO});
-
   return traits;
 }
 

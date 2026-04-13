@@ -13,6 +13,7 @@ substitutions:
 esphome:
   name: "${devicename}"
   friendly_name: "${friendly_name}"
+  min_version: "2026.4.0"
 
 esp32:
   board: m5stack-atom
