@@ -123,24 +123,6 @@ Read any NASA message code without modifying the component. Useful for codes not
       signed: true       # optional: treat as int16
 ```
 
-## Home Assistant Energy Package
-
-The [`packages/heatpump.yaml`](packages/heatpump.yaml) file provides Home Assistant template sensors and integration helpers that split aggregate power/energy readings by valve direction into separate **Heating** and **DHW** metrics:
-
-- **Per-type instantaneous power** — consumed and generated power attributed to heating (valve = "Room") or DHW (valve = "Tank")
-- **Per-type cumulative energy** — Riemann sum integration of the power sensors into kWh counters
-- **Per-type COP** — instantaneous coefficient of performance for heating, DHW, and overall
-
-To use it, copy `packages/heatpump.yaml` into your HA config directory and add to `configuration.yaml`:
-
-```yaml
-homeassistant:
-  packages:
-    heatpump: !include packages/heatpump.yaml
-```
-
-**Prerequisites:** the `3_way_valve_direction`, `hp_consumed_power_last_minute`, and `hp_generated_power_last_minute` entities must be configured in your ESPHome YAML.
-
 ## Adding New Entities
 
 Edit `components/nasactl/const.py`. No C++ changes needed.

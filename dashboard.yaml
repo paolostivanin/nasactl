@@ -1,3 +1,11 @@
+###############################################
+# nasactl — Example Home Assistant Dashboard  #
+#                                             #
+# Replace "samsung_nasa_bridge" with your     #
+# ESPHome device name. Add/remove sections    #
+# to match your configured entities.          #
+###############################################
+
 views:
   - type: sections
     title: Air Conditioning
@@ -7,7 +15,7 @@ views:
       - type: grid
         cards:
           - type: thermostat
-            entity: climate.samsung_nasa_bridge_ac_living_room
+            entity: climate.samsung_nasa_bridge_ac
             features:
               - type: climate-hvac-modes
                 hvac_modes:
@@ -33,43 +41,13 @@ views:
               - type: entities
                 entities:
                   - type: custom:multiple-entity-row
-                    entity: sensor.samsung_nasa_bridge_lp_bedroom_eva_in
-                    name: LP Bedroom EVA
+                    entity: sensor.samsung_nasa_bridge_eva_in
+                    name: EVA
                     icon: mdi:heating-coil
                     state_header: In
                     format: precision1
                     entities:
-                      - entity: sensor.samsung_nasa_bridge_lp_bedroom_eva_out
-                        name: Out
-                        format: precision1
-                  - type: custom:multiple-entity-row
-                    entity: sensor.samsung_nasa_bridge_offices_eva_in
-                    name: Offices EVA
-                    icon: mdi:heating-coil
-                    state_header: In
-                    format: precision1
-                    entities:
-                      - entity: sensor.samsung_nasa_bridge_offices_eva_out
-                        name: Out
-                        format: precision1
-                  - type: custom:multiple-entity-row
-                    entity: sensor.samsung_nasa_bridge_kids_bedroom_eva_in
-                    name: Kids Bedroom EVA
-                    icon: mdi:heating-coil
-                    state_header: In
-                    format: precision1
-                    entities:
-                      - entity: sensor.samsung_nasa_bridge_kids_bedroom_eva_out
-                        name: Out
-                        format: precision1
-                  - type: custom:multiple-entity-row
-                    entity: sensor.samsung_nasa_bridge_living_room_eva_in
-                    name: Living Room EVA
-                    icon: mdi:heating-coil
-                    state_header: In
-                    format: precision1
-                    entities:
-                      - entity: sensor.samsung_nasa_bridge_living_room_eva_out
+                      - entity: sensor.samsung_nasa_bridge_eva_out
                         name: Out
                         format: precision1
   - type: sections
@@ -207,19 +185,15 @@ views:
                     name: Upper Outdoor Temp
                   - type: section
                     label: Water Temperature at Outdoor
-                  - entity: >-
-                      number.samsung_nasa_bridge_heating_water_temp_at_cold_outdoor
+                  - entity: number.samsung_nasa_bridge_heating_water_temp_at_cold_outdoor
                     name: At Cold Outdoor
-                  - entity: >-
-                      number.samsung_nasa_bridge_heating_water_temp_at_warm_outdoor
+                  - entity: number.samsung_nasa_bridge_heating_water_temp_at_warm_outdoor
                     name: At Warm Outdoor
                   - type: section
                     label: Water Outlet Limits
-                  - entity: >-
-                      number.samsung_nasa_bridge_heating_water_outlet_upper_limit
+                  - entity: number.samsung_nasa_bridge_heating_water_outlet_upper_limit
                     name: Upper Limit
-                  - entity: >-
-                      number.samsung_nasa_bridge_heating_water_outlet_lower_limit
+                  - entity: number.samsung_nasa_bridge_heating_water_outlet_lower_limit
                     name: Lower Limit
           - type: custom:vertical-stack-in-card
             cards:
@@ -239,22 +213,19 @@ views:
                     label: Heating / DHW Priority
                   - entity: select.samsung_nasa_bridge_heating_dhw_priority
                     name: Priority
-                  - entity: >-
-                      number.samsung_nasa_bridge_heating_priority_changeover_temp
+                  - entity: number.samsung_nasa_bridge_heating_priority_changeover_temp
                     name: Changeover Temp
                   - entity: number.samsung_nasa_bridge_heating_dhw_off_outdoor_temp
                     name: DHW OFF Outdoor Temp
                   - type: section
                     label: Inverter Pump
-                  - entity: >-
-                      select.samsung_nasa_bridge_heating_inverter_pump_application
+                  - entity: select.samsung_nasa_bridge_heating_inverter_pump_application
                     name: Application
-                  - entity: >-
-                      number.samsung_nasa_bridge_heating_inverter_pump_target_delta
+                  - entity: number.samsung_nasa_bridge_heating_inverter_pump_target_delta
                     name: Target Delta
   - type: sections
-    title: Energy & Performance
-    path: energy-performance
+    title: Energy
+    path: energy
     icon: mdi:lightning-bolt
     sections:
       - type: grid
@@ -300,7 +271,7 @@ views:
           - type: custom:vertical-stack-in-card
             cards:
               - type: custom:mushroom-title-card
-                title: Aggregate Energy
+                title: Energy
               - type: entities
                 entities:
                   - type: custom:multiple-entity-row
@@ -326,70 +297,3 @@ views:
                   - entity: sensor.samsung_nasa_bridge_indoor_power_consumption
                     name: Indoor Consumption
                     icon: mdi:flash
-              - type: custom:mushroom-title-card
-                title: COP
-              - type: entities
-                entities:
-                  - entity: sensor.overall_cop_instantaneous
-                    name: Overall
-                    icon: mdi:sigma
-                  - entity: sensor.heating_cop_instantaneous
-                    name: Heating
-                    icon: mdi:sigma
-                  - entity: sensor.dhw_cop_instantaneous
-                    name: DHW
-                    icon: mdi:sigma
-      - type: grid
-        cards:
-          - type: custom:vertical-stack-in-card
-            cards:
-              - type: custom:mushroom-title-card
-                title: Heating
-              - type: entities
-                entities:
-                  - type: custom:multiple-entity-row
-                    entity: sensor.heating_consumed_power
-                    name: Consumed
-                    icon: mdi:transmission-tower-import
-                    state_header: Power
-                    format: precision0
-                    entities:
-                      - entity: sensor.heating_consumed_energy
-                        name: Energy
-                        format: precision3
-                  - type: custom:multiple-entity-row
-                    entity: sensor.heating_generated_power
-                    name: Generated
-                    icon: mdi:heat-pump-outline
-                    state_header: Power
-                    format: precision0
-                    entities:
-                      - entity: sensor.heating_generated_energy
-                        name: Energy
-                        format: precision3
-          - type: custom:vertical-stack-in-card
-            cards:
-              - type: custom:mushroom-title-card
-                title: DHW
-              - type: entities
-                entities:
-                  - type: custom:multiple-entity-row
-                    entity: sensor.dhw_consumed_power
-                    name: Consumed
-                    icon: mdi:transmission-tower-import
-                    state_header: Power
-                    format: precision0
-                    entities:
-                      - entity: sensor.dhw_consumed_energy
-                        name: Energy
-                        format: precision3
-                  - type: custom:multiple-entity-row
-                    entity: sensor.dhw_generated_power
-                    name: Generated
-                    icon: mdi:heat-pump-outline
-                    state_header: Power
-                    format: precision0
-                    entities:
-                      - entity: sensor.dhw_generated_energy
-                        name: Energy
-                        format: precision3
