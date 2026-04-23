@@ -94,7 +94,11 @@ def _number_schema(edef):
         kwargs["unit_of_measurement"] = edef["unit"]
     if "device_class" in edef:
         kwargs["device_class"] = edef["device_class"]
-    return number.number_schema(NasactlNumber, **kwargs)
+    return number.number_schema(NasactlNumber, **kwargs).extend({
+        cv.Optional("min_value"): cv.float_,
+        cv.Optional("max_value"): cv.float_,
+        cv.Optional("step"): cv.float_,
+    })
 
 
 def _select_schema(edef):
@@ -301,9 +305,9 @@ async def _create_number(config, edef, dev, ctrl):
 
     var = await number.new_number(
         config, label, code, mode, dev,
-        min_value=edef.get("min", 0),
-        max_value=edef.get("max", 100),
-        step=edef.get("step", 1),
+        min_value=config.get("min_value", edef.get("min", 0)),
+        max_value=config.get("max_value", edef.get("max", 100)),
+        step=config.get("step", edef.get("step", 1)),
     )
     cg.add(var.set_parent(ctrl))
     if "divisor" in edef:
