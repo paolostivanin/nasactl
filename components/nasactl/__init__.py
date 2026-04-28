@@ -159,15 +159,23 @@ def _build_device_entity_schemas():
     return schemas
 
 
+# Codes that the climate entity writes to. Standalone writable entities
+# for these would dual-write the bus; reject them at config time.
+# 0x4204 (current_temperature) is read-only on both sides, so it's safe to
+# pair the climate entity with a standalone room_temperature sensor.
+CLIMATE_RESERVED_CODES = {0x4000, 0x4001, 0x4006, 0x4201}
+
 # Custom sensor schema for arbitrary message codes
 CUSTOM_SENSOR_SCHEMA = sensor.sensor_schema(
     NasactlSensor,
     accuracy_decimals=1,
 ).extend({
     cv.Required(CONF_MESSAGE): cv.hex_int,
-    cv.Optional("divisor"): cv.float_,
-    cv.Optional("multiplier"): cv.float_,
+    cv.Optional("divisor"): cv.float_range(min=0.0, min_included=False),
+    cv.Optional("multiplier"): cv.float_range(min=0.0, min_included=False),
     cv.Optional("signed", default=False): cv.boolean,
+    cv.Optional("mode", default="status"):
+        cv.one_of("status", "control", "fsv", lower=True),
 })
 
 # FSV read configuration
@@ -213,6 +221,7 @@ def _validate_device(config):
             f"but device type is '{config[CONF_DEVICE_TYPE]}'")
 
     dev_type = config[CONF_DEVICE_TYPE]
+    has_climate = CONF_CLIMATE in config
     for key, edef in ENTITIES.items():
         if key not in config:
             continue
@@ -225,6 +234,23 @@ def _validate_device(config):
             raise cv.Invalid(
                 f"Entity '{key}' (code 0x{code:04X}) is an outdoor message "
                 f"and cannot be used on a '{dev_type}' device")
+        if has_climate and code in CLIMATE_RESERVED_CODES:
+            raise cv.Invalid(
+                f"Entity '{key}' (code 0x{code:04X}) is controlled by the "
+                f"climate entity on this device. Remove '{key}' or remove "
+                f"'climate' to avoid dual-writes to the bus")
+
+    for cust in config.get(CONF_CUSTOM_SENSOR, []):
+        code = cust[CONF_MESSAGE]
+        label = cust.get(CONF_NAME) or f"0x{code:04X}"
+        if dev_type == "outdoor" and _is_indoor_code(code):
+            raise cv.Invalid(
+                f"Custom sensor '{label}' (code 0x{code:04X}) is an indoor "
+                f"message and cannot be used on an 'outdoor' device")
+        if dev_type in ("hydro", "ac") and _is_outdoor_code(code):
+            raise cv.Invalid(
+                f"Custom sensor '{label}' (code 0x{code:04X}) is an outdoor "
+                f"message and cannot be used on a '{dev_type}' device")
     return config
 
 
@@ -453,12 +479,17 @@ async def to_code(config):
             # Message routers are created in NasactlClimate::setup()
 
         # Create custom sensors
+        custom_sensor_modes = {
+            "status": CONTROLLER_MODE_STATUS,
+            "control": CONTROLLER_MODE_CONTROL,
+            "fsv": CONTROLLER_MODE_FSV,
+        }
         for cust in dev_conf.get(CONF_CUSTOM_SENSOR, []):
             msg_code = cust[CONF_MESSAGE]
             label = str(cust.get(CONF_NAME, ""))
+            mode = custom_sensor_modes[cust["mode"]]
 
-            var = await sensor.new_sensor(
-                cust, label, msg_code, CONTROLLER_MODE_STATUS, dev)
+            var = await sensor.new_sensor(cust, label, msg_code, mode, dev)
             if "divisor" in cust:
                 cg.add(var.set_divisor(cust["divisor"]))
             if "multiplier" in cust:

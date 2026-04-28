@@ -13,24 +13,16 @@ void NasaController::setup() {
     this->on_packet_(packet);
   });
 
-  // Collect all FSV codes from registered components
+  // Collect all FSV codes from registered components (deduped via set)
+  std::set<uint16_t> fsv_seen;
   for (auto &pair : components_) {
     for (auto *comp : pair.second) {
       if (comp->is_fsv()) {
-        // Only add unique codes
-        bool found = false;
-        for (auto code : fsv_codes_) {
-          if (code == comp->get_message()) {
-            found = true;
-            break;
-          }
-        }
-        if (!found) {
-          fsv_codes_.push_back(comp->get_message());
-        }
+        fsv_seen.insert(comp->get_message());
       }
     }
   }
+  fsv_codes_.assign(fsv_seen.begin(), fsv_seen.end());
 
   fsv_setup_time_ = millis();
 
