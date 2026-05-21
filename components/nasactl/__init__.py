@@ -61,6 +61,7 @@ CONF_FSV_BATCH_SIZE = "batch_size"
 CONF_FSV_BATCH_DELAY = "batch_delay"
 CONF_FSV_INTERVAL = "interval"
 CONF_CLIENT_ID = "client_id"
+CONF_VERSION_SENSOR = "version_sensor"
 
 
 # ---------------------------------------------------------------------------
@@ -84,6 +85,25 @@ def _sensor_schema(edef):
     return sensor.sensor_schema(NasactlSensor, **kwargs)
 
 
+def _make_number_override_validator(edef):
+    # Resolves the effective min/max (override-or-default) and rejects
+    # inverted ranges. Partial overrides are fine as long as the result
+    # is still coherent — e.g. override max=50 with default min=30.
+    default_min = edef.get("min")
+    default_max = edef.get("max")
+
+    def validator(config):
+        eff_min = config.get("min_value", default_min)
+        eff_max = config.get("max_value", default_max)
+        if eff_min is not None and eff_max is not None and eff_min > eff_max:
+            raise cv.Invalid(
+                f"Effective range is min={eff_min}, max={eff_max} "
+                f"(after merging overrides with the entity defaults). "
+                f"min must be <= max.")
+        return config
+    return validator
+
+
 def _number_schema(edef):
     kwargs = {}
     if "icon" in edef:
@@ -94,11 +114,14 @@ def _number_schema(edef):
         kwargs["unit_of_measurement"] = edef["unit"]
     if "device_class" in edef:
         kwargs["device_class"] = edef["device_class"]
-    return number.number_schema(NasactlNumber, **kwargs).extend({
-        cv.Optional("min_value"): cv.float_,
-        cv.Optional("max_value"): cv.float_,
-        cv.Optional("step"): cv.float_,
-    })
+    return cv.All(
+        number.number_schema(NasactlNumber, **kwargs).extend({
+            cv.Optional("min_value"): cv.float_,
+            cv.Optional("max_value"): cv.float_,
+            cv.Optional("step"): cv.float_,
+        }),
+        _make_number_override_validator(edef),
+    )
 
 
 def _select_schema(edef):
@@ -163,6 +186,8 @@ def _build_device_entity_schemas():
 # for these would dual-write the bus; reject them at config time.
 # 0x4204 (current_temperature) is read-only on both sides, so it's safe to
 # pair the climate entity with a standalone room_temperature sensor.
+# Mirrors the writable CLIMATE_CODE_* constants in climate/nasactl_climate.h
+# (CLIMATE_CODE_CURRENT_TEMP is read-only and intentionally absent here).
 CLIMATE_RESERVED_CODES = {0x4000, 0x4001, 0x4006, 0x4201}
 
 # Custom sensor schema for arbitrary message codes
@@ -291,6 +316,10 @@ CONFIG_SCHEMA = cv.All(
         cv.Optional(CONF_DEBUG_LOG_MESSAGES, default=False): cv.boolean,
         cv.Optional(CONF_DEBUG_LOG_UNDEFINED, default=False): cv.boolean,
         cv.Optional(CONF_FSV_READ, default={}): FSV_READ_SCHEMA,
+        cv.Optional(CONF_VERSION_SENSOR): text_sensor.text_sensor_schema(
+            icon="mdi:tag",
+            entity_category="diagnostic",
+        ),
         cv.Required(CONF_DEVICES): cv.ensure_list(DEVICE_SCHEMA),
     }).extend(uart.UART_DEVICE_SCHEMA).extend(cv.polling_component_schema("30s")),
     _validate_devices,
@@ -300,6 +329,30 @@ CONFIG_SCHEMA = cv.All(
 # ---------------------------------------------------------------------------
 # Code generation helpers
 # ---------------------------------------------------------------------------
+
+def _get_nasactl_version():
+    # `git describe --tags --always --dirty` from the component's own checkout
+    # — works both for local development and for ESPHome's external_components
+    # git clone (which lands at .esphome/external_components/<hash>/, also a
+    # real git repo). Falls back to "unknown" when there's no git context.
+    import os
+    import subprocess
+    component_dir = os.path.dirname(os.path.abspath(__file__))
+    try:
+        result = subprocess.run(
+            ["git", "describe", "--tags", "--always", "--dirty"],
+            cwd=component_dir,
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return "unknown"
+
 
 def _controller_mode(edef):
     if edef.get("fsv"):
@@ -450,6 +503,12 @@ async def to_code(config):
         int(fsv[CONF_FSV_BATCH_DELAY].total_milliseconds)))
     cg.add(ctrl.set_fsv_interval(
         int(fsv[CONF_FSV_INTERVAL].total_milliseconds)))
+
+    # Optional version text_sensor — value is baked in at codegen time.
+    if CONF_VERSION_SENSOR in config:
+        version_str = _get_nasactl_version()
+        ver_var = await text_sensor.new_text_sensor(config[CONF_VERSION_SENSOR])
+        cg.add(ver_var.publish_state(version_str))
 
     # Process each device
     for dev_conf in config[CONF_DEVICES]:

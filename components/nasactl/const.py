@@ -616,11 +616,13 @@ ENTITIES = {
         "type": "binary_sensor",
         "code": 0x402E,
         "icon": "mdi:snowflake-melt",
+        "device_class": "running",
     },
     "water_pump_status": {
         "type": "binary_sensor",
         "code": 0x4089,
         "icon": "mdi:pump",
+        "device_class": "running",
     },
     "booster_heater_status": {
         "type": "binary_sensor",

@@ -8,6 +8,14 @@
 
 namespace nasactl {
 
+// NASA message codes owned by the climate entity. Keep in sync with
+// CLIMATE_RESERVED_CODES in components/nasactl/__init__.py.
+constexpr uint16_t CLIMATE_CODE_POWER        = 0x4000;
+constexpr uint16_t CLIMATE_CODE_MODE         = 0x4001;
+constexpr uint16_t CLIMATE_CODE_FAN_MODE     = 0x4006;
+constexpr uint16_t CLIMATE_CODE_TARGET_TEMP  = 0x4201;
+constexpr uint16_t CLIMATE_CODE_CURRENT_TEMP = 0x4204;
+
 // AC modes: Auto=0, Cool=1, Dry=2, Fan=3, Heat=4 (Samsung NASA)
 // Fan speeds: Auto=0, Low=1, Mid=2, High=3, Turbo=4 (Samsung NASA)
 

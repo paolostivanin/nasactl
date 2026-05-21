@@ -57,6 +57,11 @@ struct MessageSet {
         // Structure messages have no length prefix — they consume all
         // remaining payload bytes.  The caller must pass the payload
         // boundary (crc_offset) via payload_end so we know where to stop.
+        // Two constraints follow from "no length prefix":
+        //   1. A Structure must be the last message in a packet — any
+        //      messages after it would be swallowed as its payload.
+        //   2. Only the first 4 bytes are kept in `value`; longer payloads
+        //      advance `offset` but the tail is dropped silently.
         if (payload_end == 0 || offset > payload_end)
           return false;
         uint32_t len = payload_end - offset;
