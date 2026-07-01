@@ -558,6 +558,17 @@ ENTITIES = {
         "fsv": True,
         "entity_category": "config",
     },
+    # FSV #5033 — priority between A2A (air conditioner) and A2W (hydro) when
+    # both share one outdoor unit (drives TDM). Raw enum: 0=A2A, 1=DHW,
+    # 255=TDM not Installed (255 shown as unknown; positional map covers 0/1).
+    "a2a_dhw_priority": {
+        "type": "select",
+        "code": 0x4107,
+        "options": ["A2A", "DHW"],
+        "icon": "mdi:priority-high",
+        "fsv": True,
+        "entity_category": "config",
+    },
     "heating_inverter_pump_application": {
         "type": "select",
         "code": 0x40C2,

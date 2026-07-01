@@ -204,6 +204,10 @@ nasactl:
       heating_dhw_off_outdoor_temp:
         name: "Heating DHW OFF Outdoor Temp"
 
+      # --- FSV: A2A/A2W simultaneous-operation priority (FSV #5033) ---
+      a2a_dhw_priority:
+        name: "A2A vs DHW Priority"
+
       # --- FSV: Inverter pump ---
       heating_inverter_pump_application:
         name: "Heating Inverter Pump Application"
