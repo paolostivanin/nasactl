@@ -49,7 +49,7 @@ esphome::climate::ClimateTraits NasactlClimate::traits() {
   traits.add_feature_flags(esphome::climate::CLIMATE_SUPPORTS_CURRENT_TEMPERATURE);
   traits.set_visual_min_temperature(16.0f);
   traits.set_visual_max_temperature(30.0f);
-  traits.set_visual_temperature_step(0.5f);
+  traits.set_visual_temperature_step(1.0f);
 
   // Modes: off + cool, heat, dry, fan_only, auto
   traits.set_supported_modes({
