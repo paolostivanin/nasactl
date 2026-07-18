@@ -1,4 +1,4 @@
-#include "climate/nasactl_climate.h"
+#include "nasactl_climate.h"
 #include "esphome/core/log.h"
 
 namespace nasactl {

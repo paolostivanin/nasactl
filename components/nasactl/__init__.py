@@ -459,18 +459,6 @@ ENTITY_CREATORS = {
 # ---------------------------------------------------------------------------
 
 async def to_code(config):
-    import os
-
-    # Add the source component directory to the compiler include path so that
-    # subdirectory headers (sensor/, number/, climate/, etc.) are found.
-    # ESPHome only copies top-level component files to the build tree.
-    # Subdirectory .cpp files are pulled in via nasactl_entities.cpp (#include).
-    src_base = os.path.dirname(__file__)
-    cg.add_platformio_option(
-        "build_flags",
-        [f"-I{src_base}"],
-    )
-
     cg.add_global(cg.RawStatement('#include "esphome/components/nasactl/nasactl.h"'))
 
     # Create NasaClient (UART communication layer)
