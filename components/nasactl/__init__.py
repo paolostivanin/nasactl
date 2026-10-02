@@ -62,6 +62,13 @@ CONF_FSV_BATCH_DELAY = "batch_delay"
 CONF_FSV_INTERVAL = "interval"
 CONF_CLIENT_ID = "client_id"
 CONF_VERSION_SENSOR = "version_sensor"
+CONF_DEBUG_LOG_PACKETS = "debug_log_packets"
+CONF_PACKET_INFORMATION = "packet_information"
+CONF_STANDARD_COMMAND_HEADER = "standard_command_header"
+CONF_BATCH_WRITES = "batch_writes"
+CONF_TARGETED_READS = "targeted_reads"
+CONF_CONTROL_DATA_TYPE = "control_data_type"
+TX_COUNTERS = ("tx_timeouts", "tx_nacks", "tx_queue_drops")
 
 
 # ---------------------------------------------------------------------------
@@ -224,7 +231,7 @@ def _validate_address(value):
     if not ADDRESS_RE.match(value):
         raise cv.Invalid(
             f"Invalid address '{value}'. Must be XX.XX.XX (e.g. 20.00.00)")
-    return value
+    return value.lower()
 
 
 def _is_outdoor_code(code):
@@ -295,7 +302,12 @@ DEVICE_SCHEMA = cv.All(
         cv.GenerateID(): cv.declare_id(NasaDevice),
         cv.Required(CONF_ADDRESS): _validate_address,
         cv.Required(CONF_DEVICE_TYPE): cv.one_of("hydro", "ac", "outdoor", upper=False),
-        cv.Optional(CONF_CLIMATE): climate.climate_schema(NasactlClimate),
+        cv.Optional(CONF_CLIMATE): climate.climate_schema(NasactlClimate).extend({
+            cv.Optional(CONF_BATCH_WRITES, default=False): cv.boolean,
+        }),
+        cv.Optional(CONF_TARGETED_READS, default=False): cv.boolean,
+        cv.Optional(CONF_CONTROL_DATA_TYPE, default="write"):
+            cv.one_of("write", "request", lower=True),
         cv.Optional(CONF_CUSTOM_SENSOR, default=[]):
             cv.ensure_list(CUSTOM_SENSOR_SCHEMA),
         **_build_device_entity_schemas(),
@@ -315,6 +327,15 @@ CONFIG_SCHEMA = cv.All(
         cv.Optional(CONF_SEND_TIMEOUT, default=4000): cv.int_range(1000, 10000),
         cv.Optional(CONF_DEBUG_LOG_MESSAGES, default=False): cv.boolean,
         cv.Optional(CONF_DEBUG_LOG_UNDEFINED, default=False): cv.boolean,
+        cv.Optional(CONF_DEBUG_LOG_PACKETS, default=False): cv.boolean,
+        cv.Optional(CONF_PACKET_INFORMATION, default=False): cv.boolean,
+        cv.Optional(CONF_STANDARD_COMMAND_HEADER, default=False): cv.boolean,
+        **{cv.Optional(key): sensor.sensor_schema(
+            accuracy_decimals=0,
+            state_class="total_increasing",
+            entity_category="diagnostic",
+            icon="mdi:counter",
+        ) for key in TX_COUNTERS},
         cv.Optional(CONF_FSV_READ, default={}): FSV_READ_SCHEMA,
         cv.Optional(CONF_VERSION_SENSOR): text_sensor.text_sensor_schema(
             icon="mdi:tag",
@@ -474,6 +495,13 @@ async def to_code(config):
     cg.add(client_var.set_retry_interval(config[CONF_RETRY_INTERVAL]))
     cg.add(client_var.set_min_retries(config[CONF_MIN_RETRIES]))
     cg.add(client_var.set_send_timeout(config[CONF_SEND_TIMEOUT]))
+    cg.add(client_var.set_debug_log_packets(config[CONF_DEBUG_LOG_PACKETS]))
+    cg.add(client_var.set_packet_information(config[CONF_PACKET_INFORMATION]))
+    cg.add(client_var.set_standard_command_header(config[CONF_STANDARD_COMMAND_HEADER]))
+    for key in TX_COUNTERS:
+        if key in config:
+            counter = await sensor.new_sensor(config[key])
+            cg.add(getattr(client_var, f"set_{key}_sensor")(counter))
 
     # Create NasaController (message routing + FSV polling)
     ctrl = cg.new_Pvariable(config[CONF_ID], client_var)
@@ -504,6 +532,9 @@ async def to_code(config):
         address_class = int(address.split(".")[0], 16)
 
         dev = cg.new_Pvariable(dev_conf[CONF_ID], address, address_class)
+        cg.add(dev.set_targeted_reads(dev_conf[CONF_TARGETED_READS]))
+        cg.add(dev.set_control_data_type(dev_conf[CONF_CONTROL_DATA_TYPE] == "request"))
+        cg.add(dev.set_has_climate(CONF_CLIMATE in dev_conf))
         cg.add(ctrl.register_device(dev))
 
         # Create entities from ENTITIES dict
@@ -522,6 +553,7 @@ async def to_code(config):
             await climate.register_climate(clim, clim_conf)
             cg.add(clim.set_controller(ctrl))
             cg.add(clim.set_device(dev))
+            cg.add(clim.set_batch_writes(clim_conf[CONF_BATCH_WRITES]))
 
             # Message routers are created in NasactlClimate::setup()
 

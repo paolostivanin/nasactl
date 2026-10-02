@@ -20,6 +20,12 @@ Packet Packet::create_read(const Address &dest, const std::vector<uint16_t> &mes
 }
 
 Packet Packet::create_write(const Address &dest, uint16_t message_number, long value) {
+  MessageSet ms(message_number);
+  ms.value = value;
+  return create_write(dest, {ms});
+}
+
+Packet Packet::create_write(const Address &dest, const std::vector<MessageSet> &messages) {
   Packet pkt;
   pkt.source = Address::my_address();
   pkt.destination = dest;
@@ -27,21 +33,19 @@ Packet Packet::create_write(const Address &dest, uint16_t message_number, long v
   pkt.command.data_type = DataType::Write;
   pkt.command.packet_number = Command::next_packet_number();
 
-  MessageSet ms(message_number);
-  ms.value = value;
-  pkt.messages.push_back(ms);
+  pkt.messages = messages;
   return pkt;
 }
 
 DecodeResult Packet::decode(const std::vector<uint8_t> &data) {
-  if (data.size() < 14)
+  if (data.size() < 16)
     return DecodeResult::TooShort;
 
   if (data[0] != PACKET_START)
     return DecodeResult::InvalidStart;
 
   uint16_t size = (static_cast<uint16_t>(data[1]) << 8) | data[2];
-  if (size > PACKET_MAX_SIZE || size + 2 > data.size())
+  if (size < 14 || size > PACKET_MAX_SIZE || size + 2 > data.size())
     return DecodeResult::InvalidSize;
 
   // Frame layout: start(1) + [size_hi, size_lo, payload, crc_hi, crc_lo](=size bytes) + end(1)
@@ -83,10 +87,12 @@ DecodeResult Packet::decode(const std::vector<uint8_t> &data) {
     messages.push_back(ms);
   }
 
+  if (offset != crc_offset)
+    return DecodeResult::InvalidSize;
   return DecodeResult::Ok;
 }
 
-std::vector<uint8_t> Packet::encode() const {
+std::vector<uint8_t> Packet::encode(bool standard_header) const {
   std::vector<uint8_t> payload;
 
   // Source address (3 bytes)
@@ -98,7 +104,7 @@ std::vector<uint8_t> Packet::encode() const {
   payload.insert(payload.end(), dst.begin(), dst.end());
 
   // Command (3 bytes)
-  auto cmd = command.encode();
+  auto cmd = command.encode(standard_header);
   payload.insert(payload.end(), cmd.begin(), cmd.end());
 
   // Message count
@@ -137,7 +143,12 @@ std::string Packet::to_string() const {
            destination.to_string().c_str(),
            command.to_string().c_str(),
            messages.size());
-  return std::string(buf);
+  std::string result(buf);
+  for (const auto &message : messages) {
+    snprintf(buf, sizeof(buf), " 0x%04X=%ld", message.message_number, message.value);
+    result += buf;
+  }
+  return result;
 }
 
 }  // namespace nasactl

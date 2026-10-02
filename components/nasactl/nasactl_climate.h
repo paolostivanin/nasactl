@@ -28,6 +28,7 @@ class NasactlClimate : public esphome::climate::Climate, public esphome::Compone
 
   void set_controller(NasaController *controller) { controller_ = controller; }
   void set_device(NasaDevice *device) { device_ = device; }
+  void set_batch_writes(bool v) { batch_writes_ = v; }
 
   // Called by controller when NASA messages arrive
   void update_power(bool on);
@@ -42,6 +43,7 @@ class NasactlClimate : public esphome::climate::Climate, public esphome::Compone
  private:
   NasaController *controller_{nullptr};
   NasaDevice *device_{nullptr};
+  bool batch_writes_{false};
   esphome::climate::ClimateMode last_active_mode_{esphome::climate::CLIMATE_MODE_HEAT_COOL};
 };
 

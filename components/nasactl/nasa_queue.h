@@ -52,19 +52,21 @@ class BatchDispatcher {
     callback_ = callback;
   }
 
-  void push(const T &item) {
-    queue_.push(item);
+  bool push(const T &item) {
+    return queue_.push(item);
   }
 
-  void push(const std::vector<T> &items) {
+  bool push(const std::vector<T> &items) {
+    bool accepted = true;
     for (const auto &item : items) {
-      queue_.push(item);
+      accepted = queue_.push(item) && accepted;
     }
+    return accepted;
   }
 
   // Call this from loop(). Dispatches when ready.
   void update(uint32_t now_ms) {
-    if (queue_.empty())
+    if (queue_.empty() && pending_.empty())
       return;
 
     // Transfer from queue to pending batch

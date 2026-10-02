@@ -31,9 +31,10 @@ struct Packet {
 
   static Packet create_read(const Address &dest, const std::vector<uint16_t> &message_numbers);
   static Packet create_write(const Address &dest, uint16_t message_number, long value);
+  static Packet create_write(const Address &dest, const std::vector<MessageSet> &messages);
 
   DecodeResult decode(const std::vector<uint8_t> &data);
-  std::vector<uint8_t> encode() const;
+  std::vector<uint8_t> encode(bool standard_header = true) const;
   std::string to_string() const;
 };
 

@@ -3,7 +3,6 @@
 
 namespace nasactl {
 
-static const char *const TAG = "nasactl.climate";
 
 // Samsung NASA mode values
 static const long NASA_MODE_AUTO = 0;
@@ -31,6 +30,7 @@ void NasactlClimate::setup() {
 
   // Register message routers with controller
   if (controller_ && device_) {
+    device_->set_has_climate(true);
     auto make_router = [&](const char *name, uint16_t code, ControllerMode cm, uint8_t field) {
       auto *r = new ClimateMessageRouter(name, code, cm, device_, this, field);
       controller_->register_component(r);
@@ -76,15 +76,28 @@ void NasactlClimate::control(const esphome::climate::ClimateCall &call) {
     return;
 
   const std::string &addr = device_->get_address();
+  std::vector<MessageSet> messages;
+  auto append = [&messages](uint16_t code, long value) {
+    MessageSet message(code);
+    message.value = value;
+    // A combined normal/custom fan request produces one final fan value.
+    for (auto &existing : messages) {
+      if (existing.message_number == code) {
+        existing.value = value;
+        return;
+      }
+    }
+    messages.push_back(message);
+  };
 
   if (call.get_mode().has_value()) {
     auto mode = *call.get_mode();
 
     if (mode == esphome::climate::CLIMATE_MODE_OFF) {
-      controller_->write(addr, CLIMATE_CODE_POWER, 0);  // Power off
+      append(CLIMATE_CODE_POWER, 0);  // Power off
     } else {
       // Power on first
-      controller_->write(addr, CLIMATE_CODE_POWER, 1);
+      append(CLIMATE_CODE_POWER, 1);
 
       long nasa_mode;
       switch (mode) {
@@ -95,7 +108,7 @@ void NasactlClimate::control(const esphome::climate::ClimateCall &call) {
         case esphome::climate::CLIMATE_MODE_HEAT_COOL: nasa_mode = NASA_MODE_AUTO; break;
         default: nasa_mode = NASA_MODE_AUTO; break;
       }
-      controller_->write(addr, CLIMATE_CODE_MODE, nasa_mode);
+      append(CLIMATE_CODE_MODE, nasa_mode);
       last_active_mode_ = mode;
     }
     this->mode = mode;
@@ -104,7 +117,7 @@ void NasactlClimate::control(const esphome::climate::ClimateCall &call) {
   if (call.get_target_temperature().has_value()) {
     float temp = *call.get_target_temperature();
     long raw = static_cast<long>(temp * 10.0f);
-    controller_->write(addr, CLIMATE_CODE_TARGET_TEMP, raw);
+    append(CLIMATE_CODE_TARGET_TEMP, raw);
     this->target_temperature = temp;
   }
 
@@ -118,19 +131,26 @@ void NasactlClimate::control(const esphome::climate::ClimateCall &call) {
       case esphome::climate::CLIMATE_FAN_HIGH: nasa_fan = NASA_FAN_HIGH; break;
       default: nasa_fan = NASA_FAN_AUTO; break;
     }
-    controller_->write(addr, CLIMATE_CODE_FAN_MODE, nasa_fan);
+    append(CLIMATE_CODE_FAN_MODE, nasa_fan);
     this->set_fan_mode_(fan);
     this->clear_custom_fan_mode_();
   }
 
   if (call.has_custom_fan_mode()) {
     if (call.get_custom_fan_mode() == CUSTOM_FAN_TURBO) {
-      controller_->write(addr, CLIMATE_CODE_FAN_MODE, NASA_FAN_TURBO);
+      append(CLIMATE_CODE_FAN_MODE, NASA_FAN_TURBO);
       this->clear_custom_fan_mode_();
       this->set_custom_fan_mode_(CUSTOM_FAN_TURBO);
     }
   }
 
+  if (batch_writes_) {
+    controller_->write(addr, messages);
+  } else {
+    for (const auto &message : messages) {
+      controller_->write(addr, message.message_number, message.value);
+    }
+  }
   this->publish_state();
 }
 

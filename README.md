@@ -60,6 +60,8 @@ nasactl:
 
 See [`example.yaml`](example.yaml) for a complete configuration.
 
+For heating/DHW deployments, replace `@main` with a reviewed immutable commit or release. See [Reliable writes and diagnostics](#reliable-writes-and-diagnostics) for default behavior, experimental options and deployment requirements.
+
 ## Configuration
 
 ### Main Component
@@ -72,8 +74,8 @@ nasactl:
   # Communication tuning
   silence_interval: 100    # ms silence after RX before TX (50-1000)
   retry_interval: 500      # ms between retries (200-5000)
-  min_retries: 1           # min retry attempts (1-10)
-  send_timeout: 4000       # ms total timeout per packet (1000-10000)
+  min_retries: 1           # minimum total transmission attempts (1-10)
+  send_timeout: 4000       # ms since first transmission (1000-10000)
 
   # FSV auto-read configuration
   fsv_read:
@@ -280,3 +282,61 @@ This project combines ideas from:
 ## License
 
 MIT
+
+## Reliable writes and diagnostics
+
+The tested ESPHome target is **2026.9.1**, with **2026.7.0** checked for compatibility. Automated checks and their limits are described in [tests/README.md](tests/README.md).
+
+Only an ACK from the intended destination, addressed to this bridge and matching the transmitted front packet, completes a write. A NACK is a terminal refusal. Unanswered writes retain the configured retry and timeout policy. Reads transmit once and do not wait for an ACK. Failures log the destination, codes, values and send count.
+
+After an ACK, NACK, timeout or queue rejection, nasactl schedules reads of the affected codes at approximately 3 and 15 seconds after that outcome. Climate devices include power, mode, fan and target temperature. Readback windows expire after 20 seconds; queue pressure and bus silence can delay or prevent delivery. Genuine Response/Notification messages update entities; ACKs do not confirm applied state. The existing optimistic publish remains immediate. A mismatch updates the entity from the reported value; it does not cause another write. Startup reads and periodic FSV polling remain enabled.
+
+These transport fixes and automatic readback apply with the default configuration. The experimental switches below do not gate them. `send_timeout` starts with the first transmission, and expiry requires at least `min_retries` total attempts; it does not bound time waiting behind other packets or waiting for bus silence.
+
+Readbacks are coalesced by device and code. A newer outcome restarts that code's window. The scheduler tracks at most 256 device/code pairs, queues at most 10 codes per reconciliation read, retries rejected admission after 200 ms, and limits each queued read to 5 seconds or the remaining window. If the first attempt cannot be admitted before the second window, it is skipped. At expiry, `No fresh report after write` means no genuine report of that code arrived during the window. A report can arrive unsolicited; freshness alone does not prove the requested value was accepted. Readback timing is fixed in code and has no YAML tuning options.
+
+Optional diagnostics reset to zero at boot and use `total_increasing` state class:
+
+```yaml
+nasactl:
+  tx_timeouts:
+    name: "NASA TX Timeouts"
+  tx_nacks:
+    name: "NASA TX NACKs"
+  tx_queue_drops:
+    name: "NASA Queue Drops"
+```
+
+`tx_timeouts` counts unanswered writes and expired queued readbacks. `tx_nacks` counts matched write refusals. `tx_queue_drops` counts rejected send/read queue admissions and exhausted readback capacity. A rejected readback admission may be counted repeatedly while the scheduler retries admission.
+
+For a bounded capture window, enable `debug_log_packets: true` and DEBUG logging. It records raw TX/RX bytes and command fields, including foreign and empty ACK packets. `debug_log_messages` continues to log routed values separately.
+
+Wire changes requiring acceptance tests are **off by default**:
+
+| Option | Where it belongs | Default | Effect when enabled |
+|---|---|---|---|
+| `standard_command_header` | `nasactl` | `false` | Transmit protocol version/retry fields at corrected bit positions. Decoding always uses those positions. |
+| `packet_information` | `nasactl` | `false` | Set the packet-information header bit. Its effect on this installation still needs a capture. |
+| `control_data_type` | Each device | `write` | Setting `request` uses Request for ordinary controls. Registered FSV writes retain Write semantics. |
+| `targeted_reads` | Each device | `false` | Address reconciliation reads to this unit instead of broadcasting. Startup and periodic FSV reads remain broadcast. |
+| `batch_writes` | Each AC's `climate` | `false` | Send the fields requested by one climate call in a single packet instead of separate packets. Acceptance does not establish atomic application by the unit. |
+
+These options are independent. For example, `standard_command_header: true` does not also set `packet_information`. With the default version/retry values, the header byte is `0x20` by default, `0x40` with only the standard layout, or `0xC0` with both switches enabled. Simulator tests cover the default and experimental profiles; physical-device acceptance remains pending.
+
+```yaml
+nasactl:
+  standard_command_header: false  # true uses version bits 5..6 and retry bits 3..4
+  packet_information: false
+  devices:
+    - address: "20.00.02"
+      type: ac
+      control_data_type: write    # request is experimental; FSV always remains write
+      targeted_reads: false      # true sends reconciliation reads to this address
+      climate:
+        name: "Offices"
+        batch_writes: false      # true groups requested fields into one packet
+```
+
+Temperature/fan-only climate calls never add a power-on command. An OFF call can also contain explicitly requested temperature/fan fields. Default settings preserve the previous transmitted command header and separate climate writes. Enable experimental settings individually after capturing the baseline and verifying acceptance on one unit.
+
+For heating/DHW installations, pin `external_components` to a reviewed immutable commit or release rather than a moving branch. Hardware capture, Home Assistant attribution checks and a multi-day soak remain release requirements; successful software tests alone do not establish device acceptance.

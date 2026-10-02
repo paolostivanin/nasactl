@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstdio>
 #include <string>
 #include <vector>
 
@@ -48,8 +49,8 @@ struct Command {
     packet_number = data[offset + 2];
 
     packet_information = (b0 >> 7) & 0x01;
-    protocol_version = (b0 >> 4) & 0x03;
-    retry_count = (b0 >> 2) & 0x03;
+    protocol_version = (b0 >> 5) & 0x03;
+    retry_count = (b0 >> 3) & 0x03;
     packet_type = static_cast<PacketType>((b1 >> 4) & 0x0F);
     data_type = static_cast<DataType>(b1 & 0x0F);
 
@@ -57,10 +58,12 @@ struct Command {
     return true;
   }
 
-  std::vector<uint8_t> encode() const {
+  // Legacy transmission remains available until a captured installation validates
+  // the corrected offsets. Decoding always follows the standard NASA layout.
+  std::vector<uint8_t> encode(bool standard_header = true) const {
     uint8_t b0 = ((packet_information ? 1 : 0) << 7) |
-                 ((protocol_version & 0x03) << 4) |
-                 ((retry_count & 0x03) << 2);
+                 ((protocol_version & 0x03) << (standard_header ? 5 : 4)) |
+                 ((retry_count & 0x03) << (standard_header ? 3 : 2));
     uint8_t b1 = ((static_cast<uint8_t>(packet_type) & 0x0F) << 4) |
                  (static_cast<uint8_t>(data_type) & 0x0F);
     return {b0, b1, packet_number};
