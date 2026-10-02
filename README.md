@@ -339,4 +339,4 @@ nasactl:
 
 Temperature/fan-only climate calls never add a power-on command. An OFF call can also contain explicitly requested temperature/fan fields. Default settings preserve the previous transmitted command header and separate climate writes. Enable experimental settings individually after capturing the baseline and verifying acceptance on one unit.
 
-For heating/DHW installations, pin `external_components` to a reviewed immutable commit or release rather than a moving branch. Hardware capture, Home Assistant attribution checks and a multi-day soak remain release requirements; successful software tests alone do not establish device acceptance.
+For heating/DHW installations, pin `external_components` to a reviewed immutable commit or release rather than a moving branch. See [Reliability and release acceptance](docs/RELIABILITY.md) for incident evidence, Home Assistant constraints, verification results and the pending hardware checklist.
