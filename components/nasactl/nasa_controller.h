@@ -17,6 +17,7 @@ class NasaController : public esphome::PollingComponent {
   explicit NasaController(NasaClient *client) : client_(client) {}
 
   void setup() override;
+  void loop() override;
   void update() override;
   float get_setup_priority() const override { return esphome::setup_priority::DATA - 1; }
 
@@ -28,10 +29,13 @@ class NasaController : public esphome::PollingComponent {
 
   // Write a value to a device
   void write(const std::string &address, uint16_t message_number, long value);
+  void write(const std::string &address, const std::vector<MessageSet> &messages);
 
   // Request a read for specific message numbers
   void read(const std::vector<uint16_t> &message_numbers);
   void read(uint16_t message_number);
+  bool read(const std::string &address, const std::vector<uint16_t> &message_numbers,
+            uint32_t queue_lifetime = 0);
 
   // Debug flags
   void set_debug_log_messages(bool v) { debug_log_messages_ = v; }
@@ -48,6 +52,21 @@ class NasaController : public esphome::PollingComponent {
   void route_message_(const std::string &source_address, const MessageSet &msg);
   void fsv_poll_();
   void fsv_send_batch_();
+  void on_write_result_(const Packet &packet, WriteOutcome outcome);
+  void readback_poll_();
+  bool is_fsv_(const std::string &address, uint16_t code) const;
+
+  struct Readback {
+    uint32_t started;
+    uint32_t retry_at;
+    uint8_t attempt{0};
+    bool observed{false};
+  };
+  using ReadbackKey = std::pair<std::string, uint16_t>;
+  static constexpr size_t MAX_READBACK_CODES = 256;
+  // Fixed two attempts at +3/+15 s, with a five-second admission grace.
+  static constexpr uint32_t READBACK_LIFETIME = 20000;
+  std::map<ReadbackKey, Readback> readbacks_;
 
   NasaClient *client_;
 

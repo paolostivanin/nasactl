@@ -1,0 +1,59 @@
+esphome:
+  name: nasactl-test
+
+esp32:
+  board: m5stack-atom
+  framework:
+    type: esp-idf
+
+logger:
+  baud_rate: 0
+
+external_components:
+  - source:
+      type: local
+      path: ../components
+    components: [nasactl]
+
+uart:
+  tx_pin: GPIO19
+  rx_pin: GPIO22
+  baud_rate: 9600
+  parity: EVEN
+
+nasactl:
+  debug_log_packets: true
+  packet_information: true
+  standard_command_header: true
+  tx_timeouts:
+    name: TX Timeouts
+  tx_nacks:
+    name: TX NACKs
+  tx_queue_drops:
+    name: TX Queue Drops
+  version_sensor:
+    name: nasactl Version
+  devices:
+    - address: "20.00.00"
+      type: hydro
+      power:
+        name: Heating Enabled
+      water_target_temperature:
+        name: DHW Target
+      dhw_disinfection_start_time:
+        name: Disinfection Start
+    - address: "20.00.02"
+      type: ac
+      control_data_type: request
+      targeted_reads: true
+      climate:
+        name: Offices
+        batch_writes: true
+    - address: "20.00.03"
+      type: ac
+      climate:
+        name: Other AC
+    - address: "10.00.00"
+      type: outdoor
+      outdoor_temperature:
+        name: Outdoor Temperature

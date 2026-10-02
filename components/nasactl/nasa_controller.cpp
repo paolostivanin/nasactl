@@ -1,6 +1,8 @@
 #include "nasa_controller.h"
 #include "esphome/core/log.h"
 
+#include <algorithm>
+
 using esphome::millis;
 
 namespace nasactl {
@@ -11,6 +13,10 @@ void NasaController::setup() {
   // Register receive callback with client
   client_->set_on_packet([this](const Packet &packet) {
     this->on_packet_(packet);
+  });
+
+  client_->set_on_write_result([this](const Packet &packet, WriteOutcome outcome) {
+    on_write_result_(packet, outcome);
   });
 
   // Collect all FSV codes from registered components (deduped via set)
@@ -41,6 +47,10 @@ void NasaController::setup() {
   }
 }
 
+void NasaController::loop() {
+  readback_poll_();
+}
+
 void NasaController::update() {
   // This is called periodically by PollingComponent
   fsv_poll_();
@@ -62,15 +72,115 @@ void NasaController::register_component(NasaBase *component) {
 }
 
 void NasaController::write(const std::string &address, uint16_t message_number, long value) {
+  MessageSet message(message_number);
+  message.value = value;
+  write(address, {message});
+}
+
+bool NasaController::is_fsv_(const std::string &address, uint16_t code) const {
+  auto it = components_.find(code);
+  if (it == components_.end()) return false;
+  for (auto *component : it->second) {
+    if (component->get_address() == address && component->is_fsv()) return true;
+  }
+  return false;
+}
+
+void NasaController::write(const std::string &address, const std::vector<MessageSet> &messages) {
   auto it = devices_.find(address);
   if (it == devices_.end()) {
     ESP_LOGW(TAG, "Write to unknown device %s", address.c_str());
     return;
   }
+  // FSV writes retain Write semantics, even when normal control uses Request.
+  // Split mixed categories rather than sending one packet with ambiguous semantics.
+  std::vector<MessageSet> control, fsv;
+  for (const auto &message : messages) {
+    (is_fsv_(address, message.message_number) ? fsv : control).push_back(message);
+  }
+  const auto &dest = it->second->get_parsed_address();
+  if (!control.empty()) client_->send_write(dest, control, it->second->get_control_data_type());
+  if (!fsv.empty()) client_->send_write(dest, fsv, DataType::Write);
+}
 
-  Address dest = it->second->get_parsed_address();
-  ESP_LOGD(TAG, "Write 0x%04X = %ld to %s", message_number, value, address.c_str());
-  client_->send_write(dest, message_number, value);
+bool NasaController::read(const std::string &address, const std::vector<uint16_t> &message_numbers,
+                          uint32_t queue_lifetime) {
+  auto it = devices_.find(address);
+  if (it == devices_.end()) return false;
+  const Address dest = it->second->get_targeted_reads() ?
+                       it->second->get_parsed_address() : Address::broadcast();
+  return client_->send_read(dest, message_numbers, queue_lifetime);
+}
+
+void NasaController::on_write_result_(const Packet &packet, WriteOutcome outcome) {
+  const std::string address = packet.destination.to_string();
+  auto device = devices_.find(address);
+  if (device == devices_.end()) return;
+  std::set<uint16_t> codes;
+  for (const auto &message : packet.messages) codes.insert(message.message_number);
+  if (device->second->has_climate()) {
+    codes.insert({0x4000, 0x4001, 0x4006, 0x4201});
+  }
+  uint32_t now = millis();
+  for (auto code : codes) {
+    ReadbackKey key{address, code};
+    if (readbacks_.find(key) == readbacks_.end() && readbacks_.size() >= MAX_READBACK_CODES) {
+      client_->record_readback_drop();
+      ESP_LOGW(TAG, "Readback capacity reached: %s code=0x%04X", address.c_str(), code);
+      continue;
+    }
+    // A later result supersedes that code's previous readback window.
+    readbacks_[key] = {now, now + 3000, 0, false};
+  }
+  ESP_LOGD(TAG, "Scheduled readback for %s after write outcome=%u", address.c_str(),
+           static_cast<unsigned>(outcome));
+}
+
+void NasaController::readback_poll_() {
+  uint32_t now = millis();
+  std::map<std::string, std::vector<uint16_t>> due;
+  for (auto it = readbacks_.begin(); it != readbacks_.end();) {
+    auto &readback = it->second;
+    if (now - readback.started >= READBACK_LIFETIME) {
+      if (!readback.observed) {
+        ESP_LOGW(TAG, "No fresh report after write: %s code=0x%04X attempts=%u",
+                 it->first.first.c_str(), it->first.second, readback.attempt);
+      }
+      it = readbacks_.erase(it);
+      continue;
+    }
+    // Once the second window starts, skip any first attempt that never fit the queue.
+    if (readback.attempt == 0 && now - readback.started >= 15000) {
+      readback.attempt = 1;
+      readback.retry_at = readback.started + 15000;
+    }
+    if (readback.attempt < 2 && static_cast<int32_t>(now - readback.retry_at) >= 0) {
+      due[it->first.first].push_back(it->first.second);
+    }
+    ++it;
+  }
+  for (const auto &device : due) {
+    // Keep packets small and destination-specific; admission of each batch is atomic.
+    for (size_t offset = 0; offset < device.second.size(); offset += 10) {
+      auto end = std::min(device.second.size(), offset + 10);
+      std::vector<uint16_t> codes(device.second.begin() + offset, device.second.begin() + end);
+      uint32_t lifetime = 5000;
+      for (auto code : codes) {
+        const auto &r = readbacks_.at({device.first, code});
+        lifetime = std::min(lifetime, READBACK_LIFETIME - (now - r.started));
+      }
+      bool accepted = read(device.first, codes, lifetime);
+      for (auto code : codes) {
+        auto &r = readbacks_.at({device.first, code});
+        if (accepted) {
+          r.attempt++;
+          r.retry_at = r.started + 15000;
+        } else {
+          r.retry_at = now + 200;
+        }
+      }
+    }
+  }
 }
 
 void NasaController::read(const std::vector<uint16_t> &message_numbers) {
@@ -83,6 +193,9 @@ void NasaController::read(uint16_t message_number) {
 }
 
 void NasaController::on_packet_(const Packet &packet) {
+  // ACK payloads and other controllers' commands are not device state reports.
+  if (packet.command.data_type != DataType::Response &&
+      packet.command.data_type != DataType::Notification) return;
   std::string src = packet.source.to_string();
 
   // Only process packets from known devices (or discover new ones)
@@ -95,6 +208,8 @@ void NasaController::on_packet_(const Packet &packet) {
     if (debug_log_messages_) {
       ESP_LOGD(TAG, "[%s] msg 0x%04X = %ld", src.c_str(), msg.message_number, msg.value);
     }
+    auto readback = readbacks_.find({src, msg.message_number});
+    if (readback != readbacks_.end()) readback->second.observed = true;
     route_message_(src, msg);
   }
 }

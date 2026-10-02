@@ -24,7 +24,8 @@ struct MessageSet {
   }
 
   bool decode(const std::vector<uint8_t> &data, uint32_t &offset, uint32_t payload_end = 0) {
-    if (offset + 2 > data.size())
+    const size_t limit = payload_end == 0 ? data.size() : payload_end;
+    if (limit > data.size() || offset > limit || limit - offset < 2)
       return false;
     message_number = (static_cast<uint16_t>(data[offset]) << 8) | data[offset + 1];
     type = static_cast<MessageSetType>((message_number >> 9) & 0x03);
@@ -32,19 +33,19 @@ struct MessageSet {
 
     switch (type) {
       case MessageSetType::Enum:
-        if (offset + 1 > data.size())
+        if (limit - offset < 1)
           return false;
         value = data[offset];
         offset += 1;
         break;
       case MessageSetType::Variable:
-        if (offset + 2 > data.size())
+        if (limit - offset < 2)
           return false;
         value = (static_cast<uint16_t>(data[offset]) << 8) | data[offset + 1];
         offset += 2;
         break;
       case MessageSetType::LongVariable:
-        if (offset + 4 > data.size())
+        if (limit - offset < 4)
           return false;
         value = static_cast<long>(
             (static_cast<uint32_t>(data[offset]) << 24) |
@@ -65,10 +66,11 @@ struct MessageSet {
         if (payload_end == 0 || offset > payload_end)
           return false;
         uint32_t len = payload_end - offset;
-        value = 0;
+        uint32_t bits = 0;
         for (uint32_t i = 0; i < len && i < 4; i++) {
-          value = (value << 8) | data[offset + i];
+          bits = (bits << 8) | data[offset + i];
         }
+        value = static_cast<long>(bits);
         offset += len;
         break;
       }

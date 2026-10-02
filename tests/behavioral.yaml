@@ -1,0 +1,93 @@
+# A real ESPHome host application connected only to the test runner's PTY.
+esphome:
+  name: nasactl-behavior
+  on_boot:
+    priority: -100
+    then:
+      - lambda: |-
+          id(heating).turn_on();
+          id(dhw).make_call().set_value(49.5).perform();
+          id(fsv).make_call().set_value(9).perform();
+          id(dhw_mode).make_call().set_option("Standard").perform();
+          id(ac).make_call().set_mode("fan_only").set_fan_mode("high").set_target_temperature(24).perform();
+          if (!id(heating).state || id(dhw).state != 49.5 || id(fsv).state != 9 ||
+              id(ac).mode != climate::CLIMATE_MODE_FAN_ONLY) std::abort();
+      - delay: 6s
+      - lambda: |-
+          id(ac).make_call().set_mode("off").perform();
+      - delay: 1s
+      - lambda: |-
+          id(ac).make_call().set_target_temperature(25).set_fan_mode("low").perform();
+          if (id(ac).mode != climate::CLIMATE_MODE_OFF) std::abort();
+      - delay: 17s
+      - lambda: |-
+          if (!id(heating).state || id(dhw).state != 49.5 || id(fsv).state != 10 ||
+              id(dhw_mode).current_option() != "Standard" || id(water).state != 48.5 ||
+              id(ac).mode != climate::CLIMATE_MODE_OFF || id(ac).target_temperature != 25 ||
+              id(ac).fan_mode.value() != climate::CLIMATE_FAN_LOW ||
+              id(nacks).state != 1 || id(timeouts).state != 0 || id(drops).state != 0) {
+            ESP_LOGE("behavior", "Final state mismatch");
+            std::exit(1);
+          }
+          ESP_LOGI("behavior", "BEHAVIORAL TEST PASSED");
+          std::exit(0);
+
+host:
+
+logger:
+  level: DEBUG
+
+external_components:
+  - source:
+      type: local
+      path: "${component_path}"
+    components: [nasactl]
+
+uart:
+  port: "${uart_port}"
+  baud_rate: 9600
+  parity: NONE  # PTYs simulate bytes, not the physical RS-485 parity bit.
+
+nasactl:
+  standard_command_header: ${experimental}
+  packet_information: ${experimental}
+  tx_nacks:
+    id: nacks
+    name: NACKs
+  tx_timeouts:
+    id: timeouts
+    name: Timeouts
+  tx_queue_drops:
+    id: drops
+    name: Drops
+  fsv_read:
+    startup_delay: 5s
+    interval: 1h
+  devices:
+    - address: "20.00.00"
+      type: hydro
+      control_data_type: ${control_type}
+      targeted_reads: ${experimental}
+      power:
+        id: heating
+        name: Heating
+      water_heater_mode:
+        id: dhw_mode
+        name: DHW Mode
+      water_target_temperature:
+        id: dhw
+        name: DHW Target
+      dhw_disinfection_start_time:
+        id: fsv
+        name: FSV
+      water_temperature:
+        id: water
+        name: Water
+    - address: "20.00.02"
+      type: ac
+      control_data_type: ${control_type}
+      targeted_reads: ${experimental}
+      climate:
+        id: ac
+        name: AC
+        batch_writes: ${experimental}

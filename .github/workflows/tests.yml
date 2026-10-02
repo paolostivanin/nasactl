@@ -1,0 +1,42 @@
+name: Reliability tests
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sanitizers:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        compiler: [g++, clang++]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Protocol, transport, controller and entity regressions
+        env:
+          CXX: ${{ matrix.compiler }}
+        run: python3 tests/run_host_tests.py
+      - name: Prove known regressions are detected
+        if: matrix.compiler == 'clang++'
+        env:
+          CXX: clang++
+        run: python3 tests/run_mutation_tests.py
+  esphome:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ['2026.9.1', '2026.7.0']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install esphome==${{ matrix.version }}
+      - name: Configuration defaults, invalid inputs and entity catalog
+        run: python tests/test_config.py
+      - name: Real ESPHome runtime with simulated NASA bus
+        run: python tests/run_behavioral_tests.py
+      - name: ESP32 firmware compilation
+        run: esphome compile tests/compile.yaml
