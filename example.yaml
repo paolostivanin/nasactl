@@ -151,6 +151,21 @@ nasactl:
         name: "Heating Water Temp at Cold Outdoor"
       heating_water_temp_warm_outdoor:
         name: "Heating Water Temp at Warm Outdoor"
+      # WL2 is in force instead of WL1 when external thermostat #2 is used
+      heating_water_temp_cold_outdoor_wl2:
+        name: "Heating Water Temp at Cold Outdoor (WL2)"
+      heating_water_temp_warm_outdoor_wl2:
+        name: "Heating Water Temp at Warm Outdoor (WL2)"
+
+      # --- FSV: Water law selection and external control (read-only) ---
+      heating_water_law_type:
+        name: "Heating Water Law Type"
+      external_thermostat_1:
+        name: "External Thermostat 1 (Floor)"
+      external_thermostat_2:
+        name: "External Thermostat 2 (FCU)"
+      zone_control:
+        name: "Zone Control"
 
       # --- FSV: DHW tank limits ---
       dhw_tank_temp_upper:
