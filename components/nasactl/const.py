@@ -330,6 +330,35 @@ ENTITIES = {
         "fsv": True,
         "entity_category": "config",
     },
+    # FSV #2031/#2032 - water law 2 (WL2, "FCU/radiator") endpoints, same
+    # scaling and cap as the WL1 pair above. FSV #2041 picks WL1 or WL2 only
+    # while no external room thermostat is used (#2091 = #2092 = 0); with
+    # thermostat #2 in use WL2 is in force regardless of #2041 (Samsung
+    # DB68-12922A). Codes from the Beormund and EHS Sentinel catalogues.
+    "heating_water_temp_cold_outdoor_wl2": {
+        "type": "number",
+        "code": 0x4258,
+        "min": 17, "max": 55, "step": 1,
+        "unit": "°C",
+        "device_class": "temperature",
+        "icon": "mdi:thermometer-high",
+        "divisor": 10,
+        "signed": True,
+        "fsv": True,
+        "entity_category": "config",
+    },
+    "heating_water_temp_warm_outdoor_wl2": {
+        "type": "number",
+        "code": 0x4259,
+        "min": 17, "max": 55, "step": 1,
+        "unit": "°C",
+        "device_class": "temperature",
+        "icon": "mdi:thermometer-low",
+        "divisor": 10,
+        "signed": True,
+        "fsv": True,
+        "entity_category": "config",
+    },
 
     # --- FSV: DHW tank limits ---
     "dhw_tank_temp_upper": {
@@ -653,6 +682,64 @@ ENTITIES = {
         "mapping": {
             0: "Room",
             1: "Tank",
+        },
+    },
+
+    # --- FSV: water law selection and external control (read-only) ---
+    # Read-only on purpose: #2091/#2092 decide whether the hydro unit takes
+    # its heat demand from a wired thermostat contact, so a wrong write could
+    # silently stop heating. Change these at the wired controller.
+    # Option texts for #2091/#2092 follow Samsung DB68-12922A ("WL" means
+    # the water law can also thermo-off the compressor, with the stated pump
+    # behaviour). Codes from the Beormund and EHS Sentinel catalogues.
+    "heating_water_law_type": {
+        "type": "text_sensor",
+        "code": 0x4093,
+        "icon": "mdi:chart-bell-curve",
+        "fsv": True,
+        "entity_category": "diagnostic",
+        "mapping": {
+            1: "WL1 (floor)",
+            2: "WL2 (FCU)",
+        },
+    },
+    "external_thermostat_1": {
+        "type": "text_sensor",
+        "code": 0x4095,
+        "icon": "mdi:thermostat",
+        "fsv": True,
+        "entity_category": "diagnostic",
+        "mapping": {
+            0: "Not used",
+            1: "Thermostat only",
+            2: "Thermostat or WL, pump off",
+            3: "Thermostat or WL, pump on",
+            4: "Thermostat or WL, pump 7 min off / 3 min on",
+        },
+    },
+    "external_thermostat_2": {
+        "type": "text_sensor",
+        "code": 0x4096,
+        "icon": "mdi:thermostat",
+        "fsv": True,
+        "entity_category": "diagnostic",
+        "mapping": {
+            0: "Not used",
+            1: "Thermostat only",
+            2: "Thermostat or WL, pump off",
+            3: "Thermostat or WL, pump on",
+            4: "Thermostat or WL, pump 7 min off / 3 min on",
+        },
+    },
+    "zone_control": {
+        "type": "text_sensor",
+        "code": 0x411A,
+        "icon": "mdi:home-split",
+        "fsv": True,
+        "entity_category": "diagnostic",
+        "mapping": {
+            0: "Not used",
+            1: "Used",
         },
     },
     "error_code": {
