@@ -233,7 +233,9 @@ FSV_READ_SCHEMA = cv.Schema({
         cv.int_range(1, 50),
     cv.Optional(CONF_FSV_BATCH_DELAY, default="200ms"):
         cv.positive_time_period_milliseconds,
-    cv.Optional(CONF_FSV_INTERVAL, default="0s"):
+    # FSVs are not broadcast: without a periodic re-poll, changes made at the
+    # wired remote are never seen (EHS Sentinel polls them every 30 min).
+    cv.Optional(CONF_FSV_INTERVAL, default="24h"):
         cv.positive_time_period_milliseconds,
 })
 

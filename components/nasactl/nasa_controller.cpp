@@ -49,11 +49,13 @@ void NasaController::setup() {
 
 void NasaController::loop() {
   readback_poll_();
+  // Polled from loop() so fsv_read.batch_delay paces the batches; update()
+  // only ran every update_interval (30 s), one batch per call.
+  fsv_poll_();
 }
 
 void NasaController::update() {
-  // This is called periodically by PollingComponent
-  fsv_poll_();
+  // Kept so the PollingComponent update_interval option stays valid.
 }
 
 void NasaController::register_device(NasaDevice *device) {

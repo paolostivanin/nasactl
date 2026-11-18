@@ -80,9 +80,9 @@ nasactl:
   # FSV auto-read configuration
   fsv_read:
     startup_delay: 5s      # wait after boot before first poll
-    batch_size: 10          # codes per NASA read packet (1-50)
+    batch_size: 10          # codes queued per batch (1-50); a read packet carries at most 10
     batch_delay: 200ms      # delay between batches
-    interval: 24h           # periodic re-poll (0s = startup only)
+    interval: 24h           # periodic re-poll (default 24h; 0s = startup only)
 
   # Debug
   debug_log_messages: false    # log all received messages
@@ -238,10 +238,10 @@ The `signed: True` flag treats the raw value as a signed 16-bit integer before a
 
 Field Setting Values (FSVs) are persistent device settings that are not broadcast automatically. The component polls them:
 
-1. **On startup** — after `startup_delay`, reads all FSV-flagged codes
-2. **In batches** — packs up to `batch_size` codes into a single NASA read packet
+1. **On startup** — after `startup_delay`, reads all FSV-flagged codes (every registered code is also read once at boot)
+2. **In batches** — queues `batch_size` codes per batch; each NASA read packet carries at most 10 codes
 3. **With delay** — waits `batch_delay` between batches to avoid flooding the bus
-4. **Periodically** — re-reads all FSVs every `interval` (if > 0)
+4. **Periodically** — re-reads all FSVs every `interval` (default `24h`; `0s` = startup only)
 
 This is useful because FSVs can be changed externally (e.g., from a Samsung wired remote), and periodic polling keeps HA in sync.
 

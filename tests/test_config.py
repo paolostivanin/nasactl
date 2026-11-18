@@ -27,6 +27,7 @@ class ConfigurationTests(unittest.TestCase):
         self.assertIs(device['climate']['batch_writes'], False)
         self.assertEqual(config['send_timeout'], 4000)
         self.assertEqual(config['retry_interval'], 500)
+        self.assertEqual(config['fsv_read']['interval'].total_milliseconds, 24 * 3600 * 1000)
 
     def test_catalog(self):
         for key, definition in component.ENTITIES.items():

@@ -1,7 +1,9 @@
 #include <algorithm>
 #include <cassert>
+#include <deque>
 #include <iostream>
 #include <random>
+#include <set>
 #include "nasa_client.h"
 #include "nasa_controller.h"
 #include "nasactl_climate.h"
@@ -611,6 +613,36 @@ static void hydro_entity_regressions() {
   assert(text.state == "Unknown (9)");
 }
 
+static void fsv_poll_pacing() {
+  NasaClient client;
+  NasaController controller(&client);
+  NasaDevice device("20.00.00", 0x20);
+  std::deque<Entity> fsvs;
+  now = 0;
+  client.setup();
+  controller.register_device(&device);
+  for (uint16_t i = 0; i < 25; i++) {
+    fsvs.emplace_back(0x4250 + i, &device, ControllerMode::FSV);
+    controller.register_component(&fsvs.back());
+  }
+  controller.setup();
+  auto run_until = [&](uint32_t end) {
+    for (; now < end; now += 50) {
+      controller.loop();
+      client.loop();
+    }
+  };
+  run_until(5000);  // The read of every registered code at boot.
+  client.tx.clear();
+  // After startup_delay (5 s) batch_delay (200 ms) paces the poll; driven by
+  // update() it took one 30 s update_interval per batch.
+  run_until(6000);
+  std::set<uint16_t> polled;
+  for (const auto &frame : client.tx)
+    for (const auto &read : decode(frame).messages) polled.insert(read.message_number);
+  assert(client.tx.size() == 3 && polled.size() == 25);
+}
+
 static void startup_polling_and_uart_faults() {
   NasaClient client;
   NasaController controller(&client);
@@ -628,17 +660,17 @@ static void startup_polling_and_uart_faults() {
   client.loop();
   assert(client.tx.size() == 1 && decode(client.tx.back()).command.data_type == DataType::Read);
   now = 4999;
-  controller.update();
+  controller.loop();
   client.loop();
   assert(client.tx.size() == 1);
   now = 5000;
-  controller.update();
+  controller.loop();
   client.loop();
   client.loop();
   assert(client.tx.size() == 2);
-  controller.update();  // Poll completion.
+  controller.loop();  // Poll completion.
   now += 1000;
-  controller.update();
+  controller.loop();
   client.loop();
   client.loop();
   assert(client.tx.size() == 3);  // Periodic poll still runs.
@@ -725,6 +757,7 @@ int main() {
   readback_coalescing_and_pressure();
   climate_calls();
   hydro_entity_regressions();
+  fsv_poll_pacing();
   startup_polling_and_uart_faults();
   raw_and_wire_compatibility();
   std::cout << "All NASA transport, readback and climate host tests passed\n";
