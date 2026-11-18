@@ -117,8 +117,8 @@ Read any NASA message code without modifying the component. Useful for codes not
 - address: "10.00.00"
   type: outdoor
   custom_sensor:
-    - name: "Condenser Mid Temperature"
-      message: 0x8206
+    - name: "Discharge Temperature"
+      message: 0x820A
       device_class: temperature
       state_class: measurement
       unit_of_measurement: "°C"
@@ -126,6 +126,25 @@ Read any NASA message code without modifying the component. Useful for codes not
       divisor: 10        # optional: raw value / 10
       signed: true       # optional: treat as int16
 ```
+
+Structure messages (type bits 9–10 = 3, e.g. 0x46xx) are rejected: units answer them without a payload inside batched reads, which would discard the other values read with them.
+
+### Number Ranges
+
+Number entities use the `min`/`max`/`step` defined in `const.py`. Some FSV limits depend on the outdoor unit — Samsung MIM-E03EN gives maximums of 65/70/75 °C for #1031 and #2021–#2032 and 55/63/70 °C for #3021, above the defaults here — so a unit can report a value outside the default range. Override the range per entity:
+
+```yaml
+- address: "20.00.00"
+  type: hydro
+  heating_water_outlet_temp_upper:
+    name: "Heating Water Outlet Upper Limit"
+    max_value: 65
+  hp_max_temp_alone:
+    name: "HP Max Temp Alone"
+    max_value: 55
+```
+
+`min_value`, `max_value` and `step` are optional; the resulting range is checked at compile time (min must not exceed max). The unit still enforces its own limits.
 
 ## Adding New Entities
 

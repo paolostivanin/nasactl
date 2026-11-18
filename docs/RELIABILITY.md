@@ -95,6 +95,29 @@ passing checks before merging and add a reproducing regression for every bug.
 Review test changes together with production changes. Required branch checks
 must be configured separately in repository settings.
 
+## Reference implementations
+
+Reviewed on 2026-11-18 as evidence for the pending wire decisions:
+Beormund/esphome-samsung-nasa `be06290`, echoDaveD/ehs_sentinel_hacs_integration
+`804b47e` and omerfaruk-aran/esphome_samsung_hvac_bus. They do not replace the
+capture below.
+
+- **Header byte**: all three transmit `0xC0` (packet information on, protocol
+  version 2), and units send `0xC0` themselves (Beormund issue #27). None sends
+  the default `0x20`, and no issue reports problems with `0xC0`. After the
+  baseline capture, try `standard_command_header` together with
+  `packet_information` first.
+- **Control data type**: all default to Request, which units acknowledge
+  (Beormund README). No issue reports a NACK for either Request or Write.
+- **Read destination**: units whose address was changed, for example to
+  20.01.00 after a MIM-B19N was fitted, do not answer broadcast reads
+  (Beormund README); Beormund's `addressed_reads` therefore also covers the
+  read after boot. `targeted_reads` covers only reconciliation reads; extend it
+  to the startup and FSV reads when accepting it. Outdoor units answer reads
+  addressed to 10.00.00 (Beormund issue #166).
+- **Source address**: a second controller using 80.FF.00 receives this
+  bridge's answers; Beormund made its source address configurable for that.
+
 ## Hardware acceptance checklist
 
 Record the candidate commit, ESPHome version, enabled options, unit addresses,
