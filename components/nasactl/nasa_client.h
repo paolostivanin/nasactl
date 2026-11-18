@@ -76,6 +76,8 @@ class NasaClient : public esphome::Component, public esphome::uart::UARTDevice {
 
  private:
   void read_data_();
+  bool frame_rx_();
+  size_t next_frame_start_() const;
   void write_data_();
   void before_write_();
   void after_write_();

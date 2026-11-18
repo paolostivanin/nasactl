@@ -45,49 +45,55 @@ void NasaClient::read_data_() {
     }
 
     rx_buffer_.push_back(byte);
-
-    // Check if we have enough data to read size
-    if (rx_buffer_.size() >= 3) {
-      uint16_t expected_size = (static_cast<uint16_t>(rx_buffer_[1]) << 8) | rx_buffer_[2];
-      uint32_t expected_frame_len = expected_size + 2;  // start + size bytes + ... + end
-
-      if (rx_buffer_.size() >= expected_frame_len) {
-        // Try to decode
-        Packet pkt;
-        auto result = pkt.decode(rx_buffer_);
-
-        if (result == DecodeResult::Ok) {
-          // Capture all decoded packets, including foreign and empty ACKs.
-          if (debug_log_packets_) {
-            std::vector<uint8_t> frame(rx_buffer_.begin(), rx_buffer_.begin() + expected_frame_len);
-            log_packet_("RX", pkt, frame);
-          }
-          ack_packet(pkt);
-
-          // Forward to controller
-          if (on_packet_) {
-            on_packet_(pkt);
-          }
-
-          // Remove only the consumed bytes, preserving any trailing data
-          // from the next packet that may have already arrived.
-          rx_buffer_.erase(rx_buffer_.begin(),
-                           rx_buffer_.begin() + expected_frame_len);
-        } else {
-          if (debug_log_packets_) log_packet_("RX invalid", pkt, rx_buffer_);
-          ESP_LOGW(TAG, "Packet decode failed (result=%d), discarding %zu bytes",
-                   static_cast<int>(result), rx_buffer_.size());
-          rx_buffer_.clear();
-        }
-      }
-    }
-
-    // Prevent buffer overflow
-    if (rx_buffer_.size() > PACKET_MAX_SIZE) {
-      ESP_LOGW(TAG, "RX buffer overflow, clearing");
-      rx_buffer_.clear();
+    // Bytes left after a rejected frame start may already hold further frames.
+    while (rx_buffer_.size() >= 3 && frame_rx_()) {
     }
   }
+}
+
+// Consumes one frame or one false frame start from the front of rx_buffer_.
+// Returns false while the frame at the front is still incomplete. The size
+// check bounds the buffer to PACKET_MAX_SIZE + 2 bytes.
+bool NasaClient::frame_rx_() {
+  const uint16_t size = (static_cast<uint16_t>(rx_buffer_[1]) << 8) | rx_buffer_[2];
+  Packet pkt;
+  size_t drop;
+  if (size < 14 || size > PACKET_MAX_SIZE) {
+    // A payload byte 0x32 was taken as a frame start; re-frame from the next one.
+    drop = next_frame_start_();
+    ESP_LOGD(TAG, "Invalid packet size %u, resynchronising after %zu bytes",
+             static_cast<unsigned>(size), drop);
+  } else {
+    const size_t frame_len = size + 2u;
+    if (rx_buffer_.size() < frame_len)
+      return false;
+    auto result = pkt.decode(rx_buffer_);
+    if (result == DecodeResult::Ok) {
+      // Capture all decoded packets, including foreign and empty ACKs.
+      if (debug_log_packets_)
+        log_packet_("RX", pkt, {rx_buffer_.begin(), rx_buffer_.begin() + frame_len});
+      ack_packet(pkt);
+      if (on_packet_)
+        on_packet_(pkt);
+      rx_buffer_.erase(rx_buffer_.begin(), rx_buffer_.begin() + frame_len);
+      return true;
+    }
+    // A wrong end byte also marks a false start, and the real frames it
+    // swallowed are still buffered. A frame whose size and end byte match but
+    // whose CRC or structure is wrong is dropped whole, so a payload byte 0x32
+    // inside it cannot be taken as the next frame start.
+    drop = result == DecodeResult::InvalidEnd ? next_frame_start_() : frame_len;
+    ESP_LOGW(TAG, "Packet decode failed (result=%d), discarding %zu bytes",
+             static_cast<int>(result), drop);
+  }
+  if (debug_log_packets_)
+    log_packet_("RX invalid", pkt, {rx_buffer_.begin(), rx_buffer_.begin() + drop});
+  rx_buffer_.erase(rx_buffer_.begin(), rx_buffer_.begin() + drop);
+  return true;
+}
+
+size_t NasaClient::next_frame_start_() const {
+  return std::find(rx_buffer_.begin() + 1, rx_buffer_.end(), PACKET_START) - rx_buffer_.begin();
 }
 
 void NasaClient::write_data_() {

@@ -60,9 +60,13 @@ struct Rig {
 struct TestClimate : NasactlClimate { using NasactlClimate::control; };
 struct Entity : NasaBase {
   long state = -1;
+  std::vector<long> values;
   Entity(uint16_t code, NasaDevice *device, ControllerMode mode = ControllerMode::Control)
       : NasaBase("test", code, mode, device) {}
-  void on_receive(long value) override { state = value; }
+  void on_receive(long value) override {
+    state = value;
+    values.push_back(value);
+  }
 };
 struct TestNumber : NasactlNumber { using NasactlNumber::NasactlNumber; using NasactlNumber::control; };
 struct TestSelect : NasactlSelect { using NasactlSelect::NasactlSelect; using NasactlSelect::control; };
@@ -116,6 +120,42 @@ static void malformed_and_random_packets() {
       packet.decode(bytes);  // Reach message decoding with a valid CRC.
     }
   }
+}
+
+static std::vector<uint8_t> notification(const NasaDevice &device, uint16_t code, long value) {
+  Packet packet;
+  packet.source = device.get_parsed_address();
+  packet.destination = Address::broadcast();
+  packet.command.data_type = DataType::Notification;
+  packet.messages = {message(code, value)};
+  return packet.encode();
+}
+
+static void rx_resynchronisation() {
+  Rig rig;
+  rig.client.set_debug_log_packets(true);  // Sanitizers also check the discard log slices.
+  Entity water(0x4237, &rig.device, ControllerMode::Status);
+  rig.controller.register_component(&water);
+  auto feed = [&](std::vector<uint8_t> bytes, std::initializer_list<long> values) {
+    for (auto value : values) {
+      auto frame = notification(rig.device, 0x4237, value);
+      assert(frame.size() == 20);
+      bytes.insert(bytes.end(), frame.begin(), frame.end());
+    }
+    rig.client.rx.insert(rig.client.rx.end(), bytes.begin(), bytes.end());
+    rig.client.loop();
+  };
+  // A payload byte 0x32 read as a frame start with an oversized length used
+  // to buffer up to 1501 bytes (~1.7 s of bus traffic) before clearing.
+  feed({0x32, 0x34, 0x32}, {1});
+  assert(water.values == std::vector<long>({1}));
+  // An undersized length used to consume the start of the next frame.
+  feed({0x32, 0x00, 0x05}, {2});
+  assert(water.values == std::vector<long>({1, 2}));
+  // An in-range bogus length swallows real frames; its wrong end byte (here the
+  // fourth frame's size byte) triggers a rescan that recovers all of them.
+  feed({0x32, 0x00, 0x40}, {3, 4, 5, 6});
+  assert(water.values == std::vector<long>({1, 2, 3, 4, 5, 6}));
 }
 
 static void protocol_fixtures() {
@@ -642,6 +682,7 @@ static void raw_and_wire_compatibility() {
 int main() {
   protocol_fixtures();
   malformed_and_random_packets();
+  rx_resynchronisation();
   batches();
   acknowledgements();
   timeouts_and_wrap();

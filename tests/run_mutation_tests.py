@@ -21,6 +21,8 @@ MUTATIONS = [
     ('DHW target scaling omitted', 'nasactl_number.h',
      'if (divisor_ != 1.0f) raw *= divisor_;',
      'if (divisor_ != 1.0f) raw *= 1.0f;'),
+    ('false frame start not resynchronised', 'nasa_client.cpp',
+     'if (size < 14 || size > PACKET_MAX_SIZE) {', 'if (false) {'),
 ]
 
 # Failures count only after successful compilation and an explicit assertion.
