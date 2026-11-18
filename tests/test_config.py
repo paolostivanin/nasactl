@@ -31,6 +31,8 @@ class ConfigurationTests(unittest.TestCase):
     def test_catalog(self):
         for key, definition in component.ENTITIES.items():
             with self.subTest(entity=key):
+                # Structure messages cannot be read in a batch (see _readable_message).
+                self.assertNotEqual((definition['code'] >> 9) & 0x3, 3)
                 kind = 'outdoor' if component._is_outdoor_code(definition['code']) else 'hydro'
                 config = component.DEVICE_SCHEMA({'address': '20.00.00', 'type': kind,
                                                   key: {'name': 'Schema Test ' + key}})
@@ -51,10 +53,20 @@ class ConfigurationTests(unittest.TestCase):
                           'outdoor_temperature': {'name': 'Outdoor'}}]},
             {'devices': [{'address': '20.00.00', 'type': 'hydro',
                           'custom_sensor': [{'name': 'Invalid', 'message': 0x4237, 'divisor': 0}]}]},
+            {'devices': [{'address': '20.00.00', 'type': 'hydro',
+                          'custom_sensor': [{'name': 'Structure', 'message': 0x4619}]}]},
+            {'devices': [{'address': '20.00.00', 'type': 'hydro',
+                          'custom_sensor': [{'name': 'Too wide', 'message': 0x14237}]}]},
         ]
         for case in cases:
             with self.subTest(config=case), self.assertRaises(cv.Invalid):
                 component.CONFIG_SCHEMA(case)
+
+    def test_custom_sensor_message(self):
+        config = component.CONFIG_SCHEMA({'devices': [{
+            'address': '10.00.00', 'type': 'outdoor',
+            'custom_sensor': [{'name': 'Discharge', 'message': '0x820A', 'divisor': 10}]}]})
+        self.assertEqual(config['devices'][0]['custom_sensor'][0]['message'], 0x820A)
 
     def test_diagnostics(self):
         config = component.CONFIG_SCHEMA({'devices': [], **{

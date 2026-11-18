@@ -197,12 +197,27 @@ def _build_device_entity_schemas():
 # (CLIMATE_CODE_CURRENT_TEMP is read-only and intentionally absent here).
 CLIMATE_RESERVED_CODES = {0x4000, 0x4001, 0x4006, 0x4201}
 
+
+def _readable_message(value):
+    """A 16-bit message code that can be requested in a batched read."""
+    value = cv.hex_uint16_t(value)
+    # Bits 9-10 give the payload type; 3 is a variable-length Structure.
+    # Units answer a Structure inside a batched read without a payload
+    # (Beormund/esphome-samsung-nasa #159), which makes the whole response
+    # undecodable and loses the other values requested with it.
+    if ((value >> 9) & 0x3) == 3:
+        raise cv.Invalid(
+            f"Message 0x{value:04X} is a variable-length Structure message and "
+            "cannot be used as a custom sensor")
+    return value
+
+
 # Custom sensor schema for arbitrary message codes
 CUSTOM_SENSOR_SCHEMA = sensor.sensor_schema(
     NasactlSensor,
     accuracy_decimals=1,
 ).extend({
-    cv.Required(CONF_MESSAGE): cv.hex_int,
+    cv.Required(CONF_MESSAGE): _readable_message,
     cv.Optional("divisor"): cv.float_range(min=0.0, min_included=False),
     cv.Optional("multiplier"): cv.float_range(min=0.0, min_included=False),
     cv.Optional("signed", default=False): cv.boolean,
