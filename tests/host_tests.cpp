@@ -160,6 +160,36 @@ static void rx_resynchronisation() {
   assert(water.values == std::vector<long>({1, 2, 3, 4, 5, 6}));
 }
 
+static void unconfigured_sources() {
+  Rig rig;
+  auto from = [&](const std::string &address, DataType type) {
+    Packet packet;
+    packet.source = Address::parse(address);
+    packet.destination = Address::broadcast();
+    packet.command.data_type = type;
+    inject(rig.client, packet);
+  };
+  auto lines = [] {
+    return std::count_if(esphome::test::logs.begin(), esphome::test::logs.end(), [](const auto &line) {
+      return line.find("Unconfigured device on bus") != std::string::npos;
+    });
+  };
+  from("20.00.05", DataType::Notification);
+  from("20.00.05", DataType::Notification);
+  assert(lines() == 1 && logged("Unconfigured device on bus: 20.00.05 (Indoor)"));
+  from("50.00.00", DataType::Ack);  // Any data type reveals a device.
+  assert(lines() == 2 && logged("50.00.00 (Wired Remote)"));
+  from("20.00.02", DataType::Notification);  // Configured.
+  from("80.ff.00", DataType::Read);          // Our own frame, echoed back.
+  assert(lines() == 2);
+  for (unsigned i = 0; i < 40; i++) {
+    char address[9];
+    snprintf(address, sizeof(address), "20.01.%02x", i);
+    from(address, DataType::Notification);
+  }
+  assert(lines() == 32);  // Bounded against corrupt source addresses.
+}
+
 static void protocol_fixtures() {
   // Independent fixture: upstream NASA layout, CRC-16/XMODEM AC57.
   const std::vector<uint8_t> fixture{
@@ -747,6 +777,7 @@ int main() {
   protocol_fixtures();
   malformed_and_random_packets();
   rx_resynchronisation();
+  unconfigured_sources();
   batches();
   acknowledgements();
   timeouts_and_wrap();

@@ -195,16 +195,23 @@ void NasaController::read(uint16_t message_number) {
 }
 
 void NasaController::on_packet_(const Packet &packet) {
+  // Our own frames, echoed back by some transceivers, are not device traffic.
+  if (packet.source == Address::my_address()) return;
+  std::string src = packet.source.to_string();
+
+  // Only configured devices update entities. Name every other source once so
+  // users can find the addresses present on their bus.
+  if (addresses_.find(src) == addresses_.end()) {
+    if (unknown_sources_.size() < MAX_UNKNOWN_SOURCES && unknown_sources_.insert(src).second) {
+      ESP_LOGI(TAG, "Unconfigured device on bus: %s (%s)", src.c_str(),
+               address_class_to_string(packet.source.klass));
+    }
+    return;
+  }
+
   // ACK payloads and other controllers' commands are not device state reports.
   if (packet.command.data_type != DataType::Response &&
       packet.command.data_type != DataType::Notification) return;
-  std::string src = packet.source.to_string();
-
-  // Only process packets from known devices (or discover new ones)
-  if (addresses_.find(src) == addresses_.end()) {
-    // Track discovered but unconfigured addresses
-    return;
-  }
 
   for (const auto &msg : packet.messages) {
     if (debug_log_messages_) {

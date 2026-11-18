@@ -78,6 +78,9 @@ class NasaController : public esphome::PollingComponent {
 
   // All registered addresses
   std::set<std::string> addresses_;
+  // Unconfigured sources already logged, bounded against corrupt addresses.
+  static constexpr size_t MAX_UNKNOWN_SOURCES = 32;
+  std::set<std::string> unknown_sources_;
 
   // Debug
   bool debug_log_messages_{false};
