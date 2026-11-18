@@ -112,8 +112,11 @@ class NasaClient : public esphome::Component, public esphome::uart::UARTDevice {
   esphome::sensor::Sensor *tx_nacks_sensor_{nullptr};
   esphome::sensor::Sensor *tx_queue_drops_sensor_{nullptr};
 
-  // Batch dispatcher for read requests: queue 100, batch 10, delay 200ms
-  BatchDispatcher<uint16_t> read_dispatcher_{100, 10, 200};
+  // Batch dispatcher for read requests: queue 256, batch 10, delay 200ms.
+  // The startup read queues every registered code at once; the full catalog
+  // plus custom sensors must fit (the queue is deque-backed, so the cap
+  // reserves no memory).
+  BatchDispatcher<uint16_t> read_dispatcher_{256, 10, 200};
 };
 
 }  // namespace nasactl

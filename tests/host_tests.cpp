@@ -326,7 +326,7 @@ static void reads_and_diagnostics() {
   assert(rejected == 1 && queue.get_tx_queue_drops() == 2);  // No write callback for reads.
   NasaClient read_queue;
   read_queue.setup();
-  std::vector<uint16_t> codes(101, 0x4000);
+  std::vector<uint16_t> codes(257, 0x4000);  // Capacity 256: exactly one rejected.
   assert(!read_queue.send_read(codes) && read_queue.get_tx_queue_drops() == 1);
 
   NasaClient expired;
