@@ -673,6 +673,51 @@ static void fsv_poll_pacing() {
   assert(client.tx.size() == 3 && polled.size() == 25);
 }
 
+static void bus_health() {
+  NasaClient client;
+  NasaController controller(&client);
+  NasaDevice device("20.00.02", 0x20);
+  Entity fsv(0x4269, &device, ControllerMode::FSV);
+  esphome::binary_sensor::BinarySensor connected;
+  now = 1000;
+  client.setup();
+  controller.register_device(&device);
+  controller.register_component(&fsv);
+  controller.set_bus_connected_sensor(&connected);
+  controller.setup();
+  auto run_until = [&](uint32_t end) {
+    for (; now < end; now += 50) {
+      controller.loop();
+      client.loop();
+    }
+  };
+  auto fsv_reads = [&] {
+    return std::count_if(client.tx.begin(), client.tx.end(), [](const auto &frame) {
+      auto packet = decode(frame);
+      return packet.command.data_type == DataType::Read && packet.messages[0].message_number == 0x4269;
+    });
+  };
+  run_until(1000 + 59950);
+  assert(connected.publications.empty());  // Grace period after boot.
+  run_until(1000 + 60100);
+  assert(connected.publications == std::vector<bool>({false}));  // Dead bus reported once.
+  inject(client, Packet::create_read(Address::broadcast(), {0x4269}));  // Our own echo.
+  assert(connected.publications.size() == 1);
+  client.tx.clear();
+  auto report = notification(device, 0x4000, 1);
+  client.rx.insert(client.rx.end(), report.begin(), report.end());
+  client.loop();
+  assert(connected.publications == std::vector<bool>({false, true}));
+  // The heat pump came up after this node: FSVs are re-read after startup_delay.
+  const uint32_t back = now;
+  run_until(back + 5000);
+  assert(fsv_reads() == 0);
+  run_until(back + 5300);
+  assert(fsv_reads() == 1);
+  run_until(back + 60100);
+  assert(connected.publications == std::vector<bool>({false, true, false}));
+}
+
 static void startup_polling_and_uart_faults() {
   NasaClient client;
   NasaController controller(&client);
@@ -789,6 +834,7 @@ int main() {
   climate_calls();
   hydro_entity_regressions();
   fsv_poll_pacing();
+  bus_health();
   startup_polling_and_uart_faults();
   raw_and_wire_compatibility();
   std::cout << "All NASA transport, readback and climate host tests passed\n";

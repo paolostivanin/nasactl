@@ -68,6 +68,7 @@ CONF_STANDARD_COMMAND_HEADER = "standard_command_header"
 CONF_BATCH_WRITES = "batch_writes"
 CONF_TARGETED_READS = "targeted_reads"
 CONF_CONTROL_DATA_TYPE = "control_data_type"
+CONF_BUS_CONNECTED = "bus_connected"
 TX_COUNTERS = ("tx_timeouts", "tx_nacks", "tx_queue_drops")
 
 
@@ -353,6 +354,10 @@ CONFIG_SCHEMA = cv.All(
             entity_category="diagnostic",
             icon="mdi:counter",
         ) for key in TX_COUNTERS},
+        cv.Optional(CONF_BUS_CONNECTED): binary_sensor.binary_sensor_schema(
+            device_class="connectivity",
+            entity_category="diagnostic",
+        ),
         cv.Optional(CONF_FSV_READ, default={}): FSV_READ_SCHEMA,
         cv.Optional(CONF_VERSION_SENSOR): text_sensor.text_sensor_schema(
             icon="mdi:tag",
@@ -525,6 +530,9 @@ async def to_code(config):
     await cg.register_component(ctrl, config)
 
     cg.add(ctrl.set_debug_log_messages(config[CONF_DEBUG_LOG_MESSAGES]))
+    if CONF_BUS_CONNECTED in config:
+        bus = await binary_sensor.new_binary_sensor(config[CONF_BUS_CONNECTED])
+        cg.add(ctrl.set_bus_connected_sensor(bus))
     cg.add(ctrl.set_debug_log_undefined(config[CONF_DEBUG_LOG_UNDEFINED]))
 
     # FSV polling config

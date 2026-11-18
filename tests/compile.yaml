@@ -31,6 +31,8 @@ nasactl:
     name: TX NACKs
   tx_queue_drops:
     name: TX Queue Drops
+  bus_connected:
+    name: NASA Bus Connected
   version_sensor:
     name: nasactl Version
   devices:

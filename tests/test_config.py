@@ -70,8 +70,10 @@ class ConfigurationTests(unittest.TestCase):
         self.assertEqual(config['devices'][0]['custom_sensor'][0]['message'], 0x820A)
 
     def test_diagnostics(self):
-        config = component.CONFIG_SCHEMA({'devices': [], **{
+        config = component.CONFIG_SCHEMA({'devices': [], 'bus_connected': {'name': 'Bus'}, **{
             key: {'name': 'Schema Test ' + key} for key in component.TX_COUNTERS}})
+        self.assertEqual(config['bus_connected']['device_class'], 'connectivity')
+        self.assertEqual(config['bus_connected']['entity_category'], 'diagnostic')
         for key in component.TX_COUNTERS:
             self.assertEqual(config[key]['accuracy_decimals'], 0)
             self.assertEqual(config[key]['state_class'], 'total_increasing')

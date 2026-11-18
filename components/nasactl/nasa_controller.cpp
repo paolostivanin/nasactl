@@ -31,6 +31,7 @@ void NasaController::setup() {
   fsv_codes_.assign(fsv_seen.begin(), fsv_seen.end());
 
   fsv_setup_time_ = millis();
+  last_bus_packet_ = fsv_setup_time_;  // Grace period: no "disconnected" at boot.
 
   if (!fsv_codes_.empty()) {
     ESP_LOGI(TAG, "Registered %zu FSV codes for auto-polling", fsv_codes_.size());
@@ -48,6 +49,8 @@ void NasaController::setup() {
 }
 
 void NasaController::loop() {
+  if ((bus_connected_ || !bus_state_known_) && millis() - last_bus_packet_ >= BUS_TIMEOUT)
+    set_bus_connected_(false);
   readback_poll_();
   // Polled from loop() so fsv_read.batch_delay paces the batches; update()
   // only ran every update_interval (30 s), one batch per call.
@@ -185,6 +188,22 @@ void NasaController::readback_poll_() {
   }
 }
 
+void NasaController::set_bus_connected_(bool connected) {
+  bus_connected_ = connected;
+  bus_state_known_ = true;
+  if (bus_connected_sensor_ != nullptr) bus_connected_sensor_->publish_state(connected);
+  if (!connected) {
+    ESP_LOGW(TAG, "No NASA bus traffic for %u s", static_cast<unsigned>(BUS_TIMEOUT / 1000));
+    return;
+  }
+  ESP_LOGI(TAG, "NASA bus traffic detected");
+  // FSVs are not broadcast. Re-read them after startup_delay once the units
+  // answer again, e.g. when this node booted before the heat pump.
+  fsv_initial_poll_done_ = false;
+  fsv_polling_in_progress_ = false;
+  fsv_setup_time_ = millis();
+}
+
 void NasaController::read(const std::vector<uint16_t> &message_numbers) {
   client_->send_read(message_numbers);
 }
@@ -197,6 +216,8 @@ void NasaController::read(uint16_t message_number) {
 void NasaController::on_packet_(const Packet &packet) {
   // Our own frames, echoed back by some transceivers, are not device traffic.
   if (packet.source == Address::my_address()) return;
+  last_bus_packet_ = millis();
+  if (!bus_connected_) set_bus_connected_(true);
   std::string src = packet.source.to_string();
 
   // Only configured devices update entities. Name every other source once so

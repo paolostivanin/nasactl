@@ -242,6 +242,7 @@ Field Setting Values (FSVs) are persistent device settings that are not broadcas
 2. **In batches** — queues `batch_size` codes per batch; each NASA read packet carries at most 10 codes
 3. **With delay** — waits `batch_delay` between batches to avoid flooding the bus
 4. **Periodically** — re-reads all FSVs every `interval` (default `24h`; `0s` = startup only)
+5. **After bus recovery** — when packets arrive again after 60 s without any (e.g. this node booted before the heat pump after a power cut), the startup poll runs again after `startup_delay`
 
 This is useful because FSVs can be changed externally (e.g., from a Samsung wired remote), and periodic polling keeps HA in sync.
 
@@ -295,7 +296,7 @@ These transport fixes and automatic readback apply with the default configuratio
 
 Readbacks are coalesced by device and code. A newer outcome restarts that code's window. The scheduler tracks at most 256 device/code pairs, queues at most 10 codes per reconciliation read, retries rejected admission after 200 ms, and limits each queued read to 5 seconds or the remaining window. If the first attempt cannot be admitted before the second window, it is skipped. At expiry, `No fresh report after write` means no genuine report of that code arrived during the window. A report can arrive unsolicited; freshness alone does not prove the requested value was accepted. Readback timing is fixed in code and has no YAML tuning options.
 
-Optional diagnostics reset to zero at boot and use `total_increasing` state class:
+Optional diagnostics; the three counters reset to zero at boot and use the `total_increasing` state class:
 
 ```yaml
 nasactl:
@@ -305,7 +306,11 @@ nasactl:
     name: "NASA TX NACKs"
   tx_queue_drops:
     name: "NASA Queue Drops"
+  bus_connected:
+    name: "NASA Bus Connected"
 ```
+
+`bus_connected` (device class `connectivity`) is on while a valid packet from another device arrived within the last 60 s; units report periodically and an outdoor unit keeps the bus busy. It is off when the bus, transceiver or wiring fails, while all other entities keep their last values, so automations can check it before acting on them. After boot it stays unknown for up to 60 s until the first packet or the timeout. Our own echoed frames do not count.
 
 `tx_timeouts` counts unanswered writes and expired queued readbacks. `tx_nacks` counts matched write refusals. `tx_queue_drops` counts rejected send/read queue admissions and exhausted readback capacity. A rejected readback admission may be counted repeatedly while the scheduler retries admission.
 

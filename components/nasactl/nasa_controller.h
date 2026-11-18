@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "esphome/core/component.h"
+#include "esphome/components/binary_sensor/binary_sensor.h"
 #include "nasa_base.h"
 #include "nasa_client.h"
 #include "nasa_device.h"
@@ -37,6 +38,11 @@ class NasaController : public esphome::PollingComponent {
   bool read(const std::string &address, const std::vector<uint16_t> &message_numbers,
             uint32_t queue_lifetime = 0);
 
+  // Optional diagnostic: valid packets seen within BUS_TIMEOUT.
+  void set_bus_connected_sensor(esphome::binary_sensor::BinarySensor *sensor) {
+    bus_connected_sensor_ = sensor;
+  }
+
   // Debug flags
   void set_debug_log_messages(bool v) { debug_log_messages_ = v; }
   void set_debug_log_undefined(bool v) { debug_log_undefined_ = v; }
@@ -55,6 +61,14 @@ class NasaController : public esphome::PollingComponent {
   void on_write_result_(const Packet &packet, WriteOutcome outcome);
   void readback_poll_();
   bool is_fsv_(const std::string &address, uint16_t code) const;
+  void set_bus_connected_(bool connected);
+
+  // Units report at least every ~40 s, and an outdoor unit keeps the bus busy.
+  static constexpr uint32_t BUS_TIMEOUT = 60000;
+  esphome::binary_sensor::BinarySensor *bus_connected_sensor_{nullptr};
+  uint32_t last_bus_packet_{0};
+  bool bus_connected_{false};
+  bool bus_state_known_{false};
 
   struct Readback {
     uint32_t started;
