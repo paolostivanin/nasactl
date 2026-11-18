@@ -38,7 +38,7 @@ void NasaClient::read_data_() {
   while (available()) {
     uint8_t byte;
     read_byte(&byte);
-    last_rx_time_ = millis();
+    last_bus_activity_ = millis();
 
     if (rx_buffer_.empty() && byte != PACKET_START) {
       continue;  // Wait for start marker
@@ -117,7 +117,9 @@ void NasaClient::write_data_() {
     return;
   }
 
-  if (now - last_rx_time_ < silence_interval_)
+  // Our own transmissions count as bus activity, so queued packets are spaced
+  // and a device's reply to one packet cannot collide with the next.
+  if (now - last_bus_activity_ < silence_interval_)
     return;
   if (front.send_count > 0 && static_cast<int32_t>(now - front.next_retry) < 0)
     return;
@@ -127,6 +129,7 @@ void NasaClient::write_data_() {
   write_array(front.data.data(), front.data.size());
   flush();
   after_write_();
+  last_bus_activity_ = millis();
 
   if (!front.wait_for_ack) {
     send_queue_.pop_front();

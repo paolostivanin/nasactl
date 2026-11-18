@@ -23,6 +23,8 @@ MUTATIONS = [
      'if (divisor_ != 1.0f) raw *= 1.0f;'),
     ('false frame start not resynchronised', 'nasa_client.cpp',
      'if (size < 14 || size > PACKET_MAX_SIZE) {', 'if (false) {'),
+    ('no bus gap after transmission', 'nasa_client.cpp',
+     '  after_write_();\n  last_bus_activity_ = millis();', '  after_write_();'),
 ]
 
 # Failures count only after successful compilation and an explicit assertion.

@@ -101,7 +101,7 @@ class NasaClient : public esphome::Component, public esphome::uart::UARTDevice {
 
   std::vector<uint8_t> rx_buffer_;
   std::deque<OutgoingPacket> send_queue_;
-  uint32_t last_rx_time_{0};
+  uint32_t last_bus_activity_{0};  // Last RX byte or end of our own TX
 
   std::function<void(const Packet &)> on_packet_;
   std::function<void(const Packet &, WriteOutcome)> on_write_result_;

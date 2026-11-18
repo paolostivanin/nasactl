@@ -303,6 +303,7 @@ static void reads_and_diagnostics() {
   auto read = decode(client.tx[0]);
   assert(read.command.packet_number != 0 && read.command.data_type == DataType::Read);
   client.send_write(Address::parse("20.00.02"), 0x4000, 1);
+  now += 100;  // Bus gap after our previous transmission.
   client.loop();
   assert(client.tx.size() == 2);  // Read did not wait for a reply.
   assert(logged("TX bytes[0]"));
@@ -337,11 +338,30 @@ static void reads_and_diagnostics() {
   assert(expired.tx.empty() && expired.get_tx_timeouts() == 1);
 }
 
+static void transmit_gap() {
+  NasaClient client;
+  now = 1000;
+  client.setup();
+  client.send_read(Address::broadcast(), {0x4000});
+  client.send_read(Address::broadcast(), {0x4001});
+  client.loop();
+  client.loop();
+  // Our own frame is bus activity: a reply to it may still be on its way.
+  assert(client.tx.size() == 1);
+  now += 99;
+  client.loop();
+  assert(client.tx.size() == 1);
+  now += 1;
+  client.loop();
+  assert(client.tx.size() == 2);
+}
+
 static void reconciliation(WriteOutcome outcome) {
   Rig rig;
   Entity entity(0x4269, &rig.device, ControllerMode::FSV);
   rig.controller.register_component(&entity);
   if (outcome == WriteOutcome::QueueRejected) {
+    rig.client.set_silence_interval(0);  // Drain the filler reads back to back.
     for (unsigned i = 0; i < 64; i++) rig.client.send_read(Address::broadcast(), {0x4000});
   }
   rig.controller.write("20.00.02", 0x4269, 10);
@@ -411,6 +431,7 @@ static void readback_coalescing_and_pressure() {
   now = completed + 3100;
   rig.controller.loop();
   rig.client.loop();
+  now += 100;  // Bus gap after our previous transmission.
   rig.client.loop();
   assert(rig.client.tx.size() == 2);
   assert(decode(rig.client.tx[0]).destination == rig.device.get_parsed_address());
@@ -421,6 +442,7 @@ static void readback_coalescing_and_pressure() {
   assert(logged("No fresh report after write"));
 
   Rig pressure;
+  pressure.client.set_silence_interval(0);  // Drain the filler reads back to back.
   pressure.controller.write("20.00.02", 0x4269, 10);
   pressure.client.loop();
   inject(pressure.client, reply(decode(pressure.client.tx.back())));
@@ -436,6 +458,7 @@ static void readback_coalescing_and_pressure() {
   pressure.controller.loop();
   pressure.client.loop();
   assert(pressure.client.tx.size() == 1);
+  assert(decode(pressure.client.tx[0]).messages[0].message_number == 0x4269);  // Not a filler.
 }
 
 static std::vector<Packet> climate_packets(const ClimateCall &call, bool batched) {
@@ -451,6 +474,7 @@ static std::vector<Packet> climate_packets(const ClimateCall &call, bool batched
   std::vector<Packet> packets;
   for (unsigned i = 0; i < 5; i++) {
     auto count = rig.client.tx.size();
+    now += 100;  // Bus gap after our previous transmission.
     rig.client.loop();
     if (rig.client.tx.size() == count) break;
     auto packet = decode(rig.client.tx.back());
@@ -499,6 +523,7 @@ static void climate_calls() {
   auto control = decode(rig.client.tx.back());
   assert(control.command.data_type == DataType::Request && control.command.packet_information);
   rig.client.ack_packet(reply(control));
+  now += 100;  // Bus gap after our previous transmission.
   rig.client.loop();
   assert(decode(rig.client.tx.back()).command.data_type == DataType::Write);
 }
@@ -527,6 +552,7 @@ static void hydro_entity_regressions() {
   dhw.set_signed(true);
   dhw.control(49.5f);
   assert(dhw.state == 49.5f);
+  now += 100;  // Bus gap after our previous transmission.
   rig.client.loop();
   sent = decode(rig.client.tx.back());
   assert(sent.destination == hydro.get_parsed_address() && sent.messages[0].value == 495);
@@ -540,6 +566,7 @@ static void hydro_entity_regressions() {
   delay.set_parent(&rig.controller);
   delay.set_multiplier(10);
   delay.control(180);
+  now += 100;  // Bus gap after our previous transmission.
   rig.client.loop();
   sent = decode(rig.client.tx.back());
   assert(sent.messages[0].value == 18);
@@ -552,6 +579,7 @@ static void hydro_entity_regressions() {
   select.set_offset(1);
   select.traits.options = {"Economy", "Standard", "Power"};
   select.control("Standard");
+  now += 100;  // Bus gap after our previous transmission.
   rig.client.loop();
   sent = decode(rig.client.tx.back());
   assert(sent.messages[0].value == 2);
@@ -652,6 +680,7 @@ static void raw_and_wire_compatibility() {
   client.set_standard_command_header(true);
   client.set_packet_information(true);
   client.send_write(Address::parse("20.00.00"), 0x4000, 1);
+  now += 100;  // Bus gap after our previous transmission.
   client.loop();
   assert(client.tx.back()[9] == 0xc0);
   client.ack_packet(reply(decode(client.tx.back())));
@@ -660,6 +689,7 @@ static void raw_and_wire_compatibility() {
   auto raw = packet.encode(false);
   auto expected = raw;
   assert(client.queue_packet(packet.command.packet_number, std::move(raw)));
+  now += 100;  // Bus gap after our previous transmission.
   client.loop();
   assert(client.tx.back() == expected);  // Raw API never rewrites header or CRC.
   assert(!client.queue_packet(packet.command.packet_number, std::vector<uint8_t>(expected)));
@@ -671,9 +701,11 @@ static void raw_and_wire_compatibility() {
   a.command.packet_number = b.command.packet_number = 0x42;
   client.queue_packet(a, true);
   client.queue_packet(b, true);
+  now += 100;  // Bus gap after our previous transmission.
   client.loop();
   auto sent_a = decode(client.tx.back());
   client.ack_packet(reply(sent_a));
+  now += 100;  // Bus gap after our previous transmission.
   client.loop();
   auto sent_b = decode(client.tx.back());
   assert(sent_a.command.packet_number != sent_b.command.packet_number);
@@ -687,6 +719,7 @@ int main() {
   acknowledgements();
   timeouts_and_wrap();
   reads_and_diagnostics();
+  transmit_gap();
   for (auto outcome : {WriteOutcome::Acknowledged, WriteOutcome::Rejected,
                        WriteOutcome::TimedOut, WriteOutcome::QueueRejected}) reconciliation(outcome);
   readback_coalescing_and_pressure();
