@@ -598,10 +598,14 @@ ENTITIES = {
         "fsv": True,
         "entity_category": "config",
     },
+    # FSV #4051. R32 units use 0..2 (2 = 70 %; Samsung manual, Beormund).
+    # R290 units add a step: 2 = 85 %, 3 = 70 % (EHS Sentinel HACS issue #67,
+    # confirmed by two AE080CXYDGK owners against the MTF service list).
     "heating_inverter_pump_application": {
         "type": "select",
         "code": 0x40C2,
-        "options": ["Not use", "Output 100%", "Output 70%"],
+        "options": ["Not use", "Output 100%", "Output 70% (85% on R290)",
+                    "Output 70% (R290 only)"],
         "icon": "mdi:pump",
         "fsv": True,
         "entity_category": "config",
