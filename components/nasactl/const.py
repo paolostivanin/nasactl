@@ -117,6 +117,9 @@ ENTITIES = {
         "icon": "mdi:counter",
         "divisor": 1000,
     },
+    # 0x4204: the indoor unit's temperature reading, also used by the AC climate
+    # entity. On hydro units it is a water-side value (Beormund: about 2 °C
+    # below the water outlet, 0x4238); use zone1_room_temperature there.
     "room_temperature": {
         "type": "sensor",
         "code": 0x4204,
@@ -125,6 +128,19 @@ ENTITIES = {
         "state_class": "measurement",
         "accuracy": 1,
         "icon": "mdi:thermometer",
+        "divisor": 10,
+        "signed": True,
+    },
+    # Zone 1 room temperature on hydro units (VAR_IN_TEMP_ROOM_F in Beormund,
+    # "Room temperature for zone #1" in EHS Sentinel).
+    "zone1_room_temperature": {
+        "type": "sensor",
+        "code": 0x4203,
+        "unit": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement",
+        "accuracy": 1,
+        "icon": "mdi:home-thermometer",
         "divisor": 10,
         "signed": True,
     },
@@ -251,6 +267,21 @@ ENTITIES = {
         "unit": "°C",
         "device_class": "temperature",
         "icon": "mdi:thermometer-plus",
+        "divisor": 10,
+        "signed": True,
+    },
+
+    # Zone 1 water outlet (flow) setpoint. EHS Sentinel (writable, 5-70) and
+    # Beormund (5-65) agree on code and scaling; the unit clamps it to the
+    # FSV #1011/#1012 and #1031/#1032 limits. Beormund #113: without a room
+    # sensor, this setpoint (not 0x4201) is what the unit heats to.
+    "water_outlet_target_temperature": {
+        "type": "number",
+        "code": 0x4247,
+        "min": 5, "max": 65, "step": 0.5,
+        "unit": "°C",
+        "device_class": "temperature",
+        "icon": "mdi:thermometer-water",
         "divisor": 10,
         "signed": True,
     },
@@ -630,6 +661,13 @@ ENTITIES = {
         "code": 0x4046,
         "icon": "mdi:volume-off",
     },
+    # Outing (away) mode: the unit runs at the lowered FSV #5011-#5019 targets
+    # (Samsung MIM-E03EN). EHS Sentinel, Beormund and ha-samsung-ehs ("Away").
+    "outing_mode": {
+        "type": "switch",
+        "code": 0x406D,
+        "icon": "mdi:bag-suitcase",
+    },
     "dhw_disinfection_enable": {
         "type": "switch",
         "code": 0x4099,
@@ -675,9 +713,55 @@ ENTITIES = {
         "device_class": "heat",
     },
 
+    # Thermo on: the unit is calling for compressor heat/cool
+    # (ENUM_IN_STATE_THERMO). Compared with compressor activity it shows short
+    # cycling. EHS Sentinel and Beormund.
+    "thermo_on": {
+        "type": "binary_sensor",
+        "code": 0x4028,
+        "icon": "mdi:thermostat",
+        "device_class": "running",
+    },
+
     # =========================================================================
     # TEXT SENSORS (read-only with value mapping)
     # =========================================================================
+
+    # Live external thermostat inputs (ENUM_IN_THERMOSTAT1/2): the call for
+    # heat or cool on the hydro unit's terminals, complementing the FSV
+    # #2091/#2092 settings below. EHS Sentinel, Beormund, Samsung NASA table.
+    "external_thermostat_1_input": {
+        "type": "text_sensor",
+        "code": 0x4069,
+        "icon": "mdi:thermostat",
+        "mapping": {
+            0: "Off",
+            1: "Cool",
+            2: "Heat",
+        },
+    },
+    "external_thermostat_2_input": {
+        "type": "text_sensor",
+        "code": 0x406A,
+        "icon": "mdi:thermostat",
+        "mapping": {
+            0: "Off",
+            1: "Cool",
+            2: "Heat",
+        },
+    },
+    # Electric backup heater stage (ENUM_IN_BACKUP_HEATER). EHS Sentinel and
+    # the Samsung NASA table list three states; Beormund shows on/off only.
+    "backup_heater_status": {
+        "type": "text_sensor",
+        "code": 0x406C,
+        "icon": "mdi:radiator",
+        "mapping": {
+            0: "Off",
+            1: "Step 1",
+            2: "Step 2",
+        },
+    },
 
     "dhw_valve_direction": {
         "type": "text_sensor",
@@ -744,6 +828,22 @@ ENTITIES = {
         "mapping": {
             0: "Not used",
             1: "Used",
+        },
+    },
+    # Error code reported by this unit (VAR_AD_ERROR_CODE1, Samsung NASA table),
+    # for indoor units too; error_code (0x8235) is outdoor-only. Indoor and
+    # outdoor units signal "no error" differently, as 0 or 0xFFFF (EHS Sentinel
+    # #73); routing by source address keeps them apart. Errors show as
+    # "Unknown (N)", N being the Samsung E-number (meanings in the error_code
+    # table): a full table would cost ~8 KB of heap per configured unit.
+    "unit_error_code": {
+        "type": "text_sensor",
+        "code": 0x0202,
+        "icon": "mdi:alert-circle",
+        "entity_category": "diagnostic",
+        "mapping": {
+            0: "No Error",
+            65535: "No Error",
         },
     },
     "error_code": {

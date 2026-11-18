@@ -115,6 +115,8 @@ nasactl:
         name: "3-Way Valve Direction"
 
       # --- Status sensors ---
+      zone1_room_temperature:
+        name: "Zone 1 Room Temperature"   # needs a Samsung room sensor/remote
       water_law_target_flow_temp:
         name: "Water Law Target Flow Temp"
       indoor_power_consumption:
@@ -129,12 +131,26 @@ nasactl:
         name: "Water Pump Status"
       booster_heater_status:
         name: "Booster Heater Status"
+      backup_heater_status:
+        name: "Backup Heater Status"
+      thermo_on:
+        name: "Thermo On"
+      external_thermostat_1_input:
+        name: "External Thermostat 1 Input"
+      external_thermostat_2_input:
+        name: "External Thermostat 2 Input"
+      unit_error_code:
+        name: "Hydro Error Code"
 
       # --- Controls ---
       silence_mode:
         name: "Silence Mode"
       water_law_target_temp_shift:
         name: "Water Law Target Temp Shift"
+      water_outlet_target_temperature:
+        name: "Water Outlet Target Temperature"
+      outing_mode:
+        name: "Outing Mode"
 
       # --- FSV: Heating water outlet limits ---
       heating_water_outlet_temp_upper:
@@ -243,6 +259,8 @@ nasactl:
         name: "Living Room EVA In"
       indoor_eva_out_temperature:
         name: "Living Room EVA Out"
+      unit_error_code:
+        name: "Living Room Error Code"
 
     # ==============================================================
     # Outdoor Unit

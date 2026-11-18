@@ -107,6 +107,8 @@ Entity-to-device-type compatibility is validated at compile time: indoor entitie
 
 AC devices support a climate entity with modes (Cool, Heat, Dry, Fan Only, Auto) and fan speeds (Auto, Low, Medium, High, Turbo).
 
+`room_temperature` (0x4204) is the indoor unit's temperature reading, as used by the climate entity. On hydro units 0x4204 is a water-side value; use `zone1_room_temperature` (0x4203) for the zone 1 room temperature.
+
 ### Custom Sensors
 
 Read any NASA message code without modifying the component. Useful for codes not yet defined in `const.py`:
