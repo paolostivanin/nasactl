@@ -3,6 +3,8 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+  schedule:
+    - cron: '0 4 * * 1'
 permissions:
   contents: read
 jobs:
@@ -27,13 +29,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ['2026.9.1', '2026.7.0']
+        version: ['latest', '2026.7.0']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: pip install esphome==${{ matrix.version }}
+      - name: Install ESPHome
+        env:
+          ESPHOME_VERSION: ${{ matrix.version }}
+        run: |
+          if [ "$ESPHOME_VERSION" = latest ]; then
+            pip install esphome
+          else
+            pip install "esphome==$ESPHOME_VERSION"
+          fi
+          esphome version
       - name: Configuration defaults, invalid inputs and entity catalog
         run: python tests/test_config.py
       - name: Real ESPHome runtime with simulated NASA bus

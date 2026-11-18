@@ -285,7 +285,7 @@ MIT
 
 ## Reliable writes and diagnostics
 
-The tested ESPHome target is **2026.9.1**, with **2026.7.0** checked for compatibility. Automated checks and their limits are described in [tests/README.md](tests/README.md).
+CI targets the latest stable ESPHome release and checks **2026.7.0** for compatibility. ESPHome **2026.10.1** is deployed by the maintainer. Automated checks and their limits are described in [tests/README.md](tests/README.md).
 
 Only an ACK from the intended destination, addressed to this bridge and matching the transmitted front packet, completes a write. A NACK is a terminal refusal. Unanswered writes retain the configured retry and timeout policy. Reads transmit once and do not wait for an ACK. Failures log the destination, codes, values and send count.
 

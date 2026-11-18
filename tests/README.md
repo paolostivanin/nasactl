@@ -1,7 +1,7 @@
 # Reliability checks
 
-Primary target: ESPHome **2026.9.1**. Compatibility target: **2026.7.0**.
-CI runs every check below for changes to this repository; no test connects to a heat pump.
+Primary target: the latest stable ESPHome release. Compatibility target: **2026.7.0**.
+CI runs every check below for changes to this repository and weekly to detect new stable releases; no test connects to a heat pump.
 
 ```sh
 python3 tests/run_host_tests.py

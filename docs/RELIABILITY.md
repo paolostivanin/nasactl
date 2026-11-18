@@ -89,7 +89,7 @@ The implementation was verified locally on 2026-10-02:
 | Real ESPHome runtime, default and experimental profiles, both versions | Passed |
 | ESP32 firmware compilation, both versions | Passed |
 
-ESPHome 2026.9.1 is the primary target; 2026.7.0 is the compatibility target.
+CI now targets the latest stable ESPHome release; 2026.7.0 is the compatibility target.
 The CI workflow runs the checks described in the test documentation. Require
 passing checks before merging and add a reproducing regression for every bug.
 Review test changes together with production changes. Required branch checks
