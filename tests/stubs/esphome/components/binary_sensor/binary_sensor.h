@@ -4,6 +4,7 @@ namespace esphome::binary_sensor {
 class BinarySensor {
  public:
   bool state{};
-  void publish_state(bool value) { state = value; }
+  std::vector<bool> publications;
+  void publish_state(bool value) { state = value; publications.push_back(value); }
 };
 }

@@ -12,6 +12,7 @@ class NasactlBinarySensor : public esphome::binary_sensor::BinarySensor, public 
       : NasaBase(label, message, mode, device) {}
 
   void on_receive(long value) override {
+    if (value == 0xFF) return;  // "Not available": unsupported codes answer 0xFF.
     publish_state(value != 0);
   }
 };

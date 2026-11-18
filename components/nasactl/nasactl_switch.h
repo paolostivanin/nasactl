@@ -15,6 +15,7 @@ class NasactlSwitch : public esphome::switch_::Switch, public NasaBase {
   void set_parent(NasaController *parent) { parent_ = parent; }
 
   void on_receive(long value) override {
+    if (value == 0xFF) return;  // "Not available": unsupported codes answer 0xFF.
     bool state = (value != 0);
     publish_state(state);
   }

@@ -478,6 +478,8 @@ static void hydro_entity_regressions() {
   rig.client.ack_packet(reply(sent));
   heating.on_receive(0);
   assert(!heating.state);
+  heating.on_receive(0xFF);  // Unsupported code: "not available", not ON.
+  assert(!heating.state && heating.publications.size() == 2);
 
   TestNumber dhw("DHW", 0x4235, ControllerMode::Control, &hydro);
   dhw.set_parent(&rig.controller);
@@ -530,6 +532,8 @@ static void hydro_entity_regressions() {
   assert(binary.state);
   binary.on_receive(0);
   assert(!binary.state);
+  binary.on_receive(0xFF);
+  assert(!binary.state && binary.publications.size() == 2);
   NasactlTextSensor text("text", 0x4001, ControllerMode::Status, &hydro);
   text.add_mapping(3, "Fan");
   text.on_receive(3);
