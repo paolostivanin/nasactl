@@ -74,7 +74,7 @@ nasactl:
     startup_delay: 5s      # wait after boot before first poll
     batch_size: 10          # max codes per NASA packet
     batch_delay: 200ms      # delay between batches
-    interval: 24h           # periodic re-poll (0s = startup only)
+    interval: 24h           # periodic re-poll (0s disables periodic reads)
 
   # Debug logging
   debug_log_messages: false

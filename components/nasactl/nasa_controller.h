@@ -104,7 +104,7 @@ class NasaController : public esphome::PollingComponent {
   uint32_t fsv_startup_delay_{5000};
   uint32_t fsv_batch_size_{10};
   uint32_t fsv_batch_delay_{200};
-  uint32_t fsv_interval_{0};  // 0 = startup only
+  uint32_t fsv_interval_{0};  // 0 = no periodic re-poll
 
   bool fsv_initial_poll_done_{false};
   uint32_t fsv_setup_time_{0};

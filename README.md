@@ -82,7 +82,7 @@ nasactl:
     startup_delay: 5s      # wait after boot before first poll
     batch_size: 10          # codes queued per batch (1-50); a read packet carries at most 10
     batch_delay: 200ms      # delay between batches
-    interval: 24h           # periodic re-poll (default 24h; 0s = startup only)
+    interval: 24h           # periodic re-poll (default 24h; 0s disables periodic reads)
 
   # Debug
   debug_log_messages: false    # log all received messages
@@ -262,10 +262,12 @@ Field Setting Values (FSVs) are persistent device settings that are not broadcas
 1. **On startup** — after `startup_delay`, reads all FSV-flagged codes (every registered code is also read once at boot)
 2. **In batches** — queues `batch_size` codes per batch; each NASA read packet carries at most 10 codes
 3. **With delay** — waits `batch_delay` between batches to avoid flooding the bus
-4. **Periodically** — re-reads all FSVs every `interval` (default `24h`; `0s` = startup only)
+4. **Periodically** — re-reads all FSVs every `interval` (default `24h`; `0s` disables periodic reads)
 5. **After bus recovery** — when packets arrive again after 60 s without any (e.g. this node booted before the heat pump after a power cut), the startup poll runs again after `startup_delay`
 
 This is useful because FSVs can be changed externally (e.g., from a Samsung wired remote), and periodic polling keeps HA in sync.
+
+Only `fsv_read` controls this polling. The ESPHome `update_interval` option is accepted but has no effect. The `component.update` and `component.suspend` actions do not start or stop FSV polls. `interval: 0s` disables periodic reads; FSVs are still read at startup and after bus recovery.
 
 ## Project Structure
 
