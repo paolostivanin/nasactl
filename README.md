@@ -62,6 +62,15 @@ See [`example.yaml`](example.yaml) for a complete configuration.
 
 For heating/DHW deployments, replace `@main` with a reviewed immutable commit or release. See [Reliable writes and diagnostics](#reliable-writes-and-diagnostics) for default behavior, experimental options and deployment requirements.
 
+## Upgrading
+
+### From v1.3.0
+
+The FSV #4051 `heating_inverter_pump_application` select labels changed, because R290 units use an extra step (raw 2 = 85 %, raw 3 = 70 %). Home Assistant matches options by exact text, so update automations and scripts that use `Output 70%`:
+
+- **R32:** use `Output 70% (85% on R290)`. It sends the same raw value as before.
+- **R290:** for 70 %, use `Output 70% (R290 only)`. The old `Output 70%` label actually set 85 %; to keep that, use `Output 70% (85% on R290)`.
+
 ## Configuration
 
 ### Main Component
@@ -231,6 +240,7 @@ Edit `components/nasactl/const.py`. No C++ changes needed.
         1: "Running",
         2: "Error",
     },
+    "ignore": [255],  # optional: "not available" values, never published
 },
 ```
 
