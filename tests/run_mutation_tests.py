@@ -25,6 +25,8 @@ MUTATIONS = [
      'if (size < 14 || size > PACKET_MAX_SIZE) {', 'if (false) {'),
     ('no bus gap after transmission', 'nasa_client.cpp',
      '  after_write_();\n  last_bus_activity_ = millis();', '  after_write_();'),
+    ('unavailable value clears displayed fault', 'nasactl_text_sensor.h',
+     'if (ignored_.count(value))\n      return;\n', ''),
 ]
 
 # Failures count only after successful compilation and an explicit assertion.

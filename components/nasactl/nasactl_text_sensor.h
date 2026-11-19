@@ -2,6 +2,7 @@
 
 #include <climits>
 #include <map>
+#include <set>
 #include <string>
 
 #include "esphome/components/text_sensor/text_sensor.h"
@@ -19,7 +20,12 @@ class NasactlTextSensor : public esphome::text_sensor::TextSensor, public NasaBa
     mapping_[key] = text;
   }
 
+  // Values meaning "not available": dropped so the last real state stays.
+  void add_ignored(long value) { ignored_.insert(value); }
+
   void on_receive(long value) override {
+    if (ignored_.count(value))
+      return;
     if (value == last_value_)
       return;  // Skip duplicate updates
 
@@ -39,6 +45,7 @@ class NasactlTextSensor : public esphome::text_sensor::TextSensor, public NasaBa
 
  private:
   std::map<long, std::string> mapping_;
+  std::set<long> ignored_;
   long last_value_{LONG_MIN};
 };
 

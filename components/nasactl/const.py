@@ -831,11 +831,14 @@ ENTITIES = {
         },
     },
     # Error code reported by this unit (VAR_AD_ERROR_CODE1, Samsung NASA table),
-    # for indoor units too; error_code (0x8235) is outdoor-only. Indoor and
-    # outdoor units signal "no error" differently, as 0 or 0xFFFF (EHS Sentinel
-    # #73); routing by source address keeps them apart. Errors show as
-    # "Unknown (N)", N being the Samsung E-number (meanings in the error_code
-    # table): a full table would cost ~8 KB of heap per configured unit.
+    # for indoor units too; error_code (0x8235) is outdoor-only. Indoor units
+    # report 0 for no error; outdoor units send 0xFFFF, which EHS Sentinel
+    # treats as invalid and drops (HACS #73, fixed in c21b817 / v2.1.2), as
+    # for unsupported codes (Beormund #166). 0xFFFF is ignored, never shown as
+    # "No Error", so it cannot clear a displayed fault; outdoor faults are in
+    # error_code. Errors show as "Unknown (N)", N being the Samsung E-number
+    # (meanings in the error_code table): a full table would cost ~8 KB of
+    # heap per configured unit.
     "unit_error_code": {
         "type": "text_sensor",
         "code": 0x0202,
@@ -843,8 +846,8 @@ ENTITIES = {
         "entity_category": "diagnostic",
         "mapping": {
             0: "No Error",
-            65535: "No Error",
         },
+        "ignore": [65535],
     },
     "error_code": {
         "type": "text_sensor",

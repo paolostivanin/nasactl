@@ -641,6 +641,15 @@ static void hydro_entity_regressions() {
   assert(text.state == "Fan" && text.publications.size() == 1);
   text.on_receive(9);
   assert(text.state == "Unknown (9)");
+  // 0xFFFF ("not available") must not clear a displayed fault.
+  NasactlTextSensor error("error", 0x0202, ControllerMode::Status, &hydro);
+  error.add_mapping(0, "No Error");
+  error.add_ignored(65535);
+  error.on_receive(201);
+  error.on_receive(65535);
+  assert(error.state == "Unknown (201)" && error.publications.size() == 1);
+  error.on_receive(0);
+  assert(error.state == "No Error");
 }
 
 static void fsv_poll_pacing() {

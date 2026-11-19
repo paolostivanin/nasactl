@@ -39,6 +39,13 @@ class ConfigurationTests(unittest.TestCase):
                                                   key: {'name': 'Schema Test ' + key}})
                 self.assertIn(key, config)
 
+    def test_unit_error_code_ignores_unavailable(self):
+        # 0xFFFF is "not available" (EHS Sentinel HACS c21b817), never an all-clear.
+        definition = component.ENTITIES['unit_error_code']
+        self.assertIn(65535, definition['ignore'])
+        self.assertNotIn(65535, definition['mapping'])
+        self.assertEqual(definition['mapping'][0], 'No Error')
+
     def test_rejections(self):
         cases = [
             {'devices': [{'address': 'bad', 'type': 'hydro'}]},

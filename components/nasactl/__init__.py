@@ -484,6 +484,8 @@ async def _create_text_sensor(config, edef, dev, ctrl):
     if "mapping" in edef:
         for val, txt in edef["mapping"].items():
             cg.add(var.add_mapping(val, txt))
+    for val in edef.get("ignore", []):
+        cg.add(var.add_ignored(val))
     cg.add(ctrl.register_component(var))
 
 
